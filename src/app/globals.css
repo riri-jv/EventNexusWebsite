@@ -2,20 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Default (light) theme */
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Dark mode theme for next-themes using class strategy */
+.dark {
+  --background: #121212;
+  --foreground: #f5f5f5;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+  transition: background 0.3s, color 0.3s;
+  min-height: 100vh;
+}
+
+main {
+  background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.03));
 }
