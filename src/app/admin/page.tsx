@@ -1,3 +1,6 @@
+'use server'
+
+
 import { redirect } from 'next/navigation'
 import { checkRole } from '@/utils/roles'
 import { SearchUsers } from './SearchUsers'
