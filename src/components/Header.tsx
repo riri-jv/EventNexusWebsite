@@ -21,30 +21,26 @@ export default function Header() {
   if (!mounted) return null
 
   return (
-    <header className="w-full max-w-7xl mx-auto flex items-center justify-between px-4 py-6">
-      {/* Logo with potential logo image */}
-      <Link href="/" className="flex items-center gap-2">
-        <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          EventNexus
-        </span>
-      </Link>
-
-      {/* Navigation and Actions */}
-      <div className="flex items-center gap-6">
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="/events" className="text-sm font-medium hover:text-blue-600 transition-colors">
-            Events
-          </Link>
-          <Link href="/categories" className="text-sm font-medium hover:text-blue-600 transition-colors">
-            Categories
-          </Link>
-          <Link href="/about" className="text-sm font-medium hover:text-blue-600 transition-colors">
-            About
-          </Link>
-        </nav>
-
+    <header className="w-full px-4 py-4 shadow-sm bg-white dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        {/* Left: Logo */}
         <div className="flex items-center gap-4">
-          {/* Theme Toggle */}
+          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            EventNexus
+          </Link>
+        </div>
+
+        {/* Center: Search Bar */}
+        <div className="flex-1 max-w-md mx-4">
+          <input
+            type="text"
+            placeholder="Search events..."
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Right: Theme Toggle + Auth */}
+        <div className="flex items-center gap-4">
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -55,12 +51,12 @@ export default function Header() {
 
           <SignedOut>
             <SignInButton mode="modal">
-              <button className="px-4 py-2 text-sm font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <button className="px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 Sign In
               </button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <button className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              <button className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                 Sign Up
               </button>
             </SignUpButton>

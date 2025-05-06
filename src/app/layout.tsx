@@ -36,10 +36,13 @@ export default function RootLayout({
         >
           {/* Wrap the entire UI in ThemeProvider ONCE here */}
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <Header />
-            <main>{children}</main>
-            <Footer />
-          </ThemeProvider>
+  <Header />
+  <main className="max-w-7xl mx-auto px-4 py-6">
+    {children}
+  </main>
+  <Footer />
+</ThemeProvider>
+
         </body>
       </html>
     </ClerkProvider>

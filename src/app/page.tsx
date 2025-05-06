@@ -14,6 +14,7 @@ export default async function Page() {
           <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Discover Amazing Events Near You
           </h1>
+
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8">
             From concerts and conferences to workshops and meetups, find your next unforgettable experience with EventNexus.
           </p>

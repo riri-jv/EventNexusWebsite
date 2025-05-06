@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html, body {
+    @apply min-h-screen antialiased;
+  }
+
+  *, *::before, *::after {
+    @apply box-border;
+  }
+}
+
+
+
 /* Default (light) theme */
 :root {
   --background: #ffffff;
