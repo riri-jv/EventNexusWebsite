@@ -14,6 +14,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "class-variance-authority": "^0.7.1",
     "crypto": "^1.0.1",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.9.6",
     "lucide-react": "^0.507.0",
     "mongoose": "^8.14.1",
