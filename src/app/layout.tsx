@@ -6,6 +6,7 @@ import { type Metadata } from 'next'
 import Header from '../components/Header'
 import { ThemeProvider } from 'next-themes'
 import { Footer } from '../components/ui/Footer'
+import  StarryBackground  from '../components/starryBackground'
 
 
 const geistSans = Geist({
@@ -36,6 +37,7 @@ export default function RootLayout({
         >
           {/* Wrap the entire UI in ThemeProvider ONCE here */}
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <StarryBackground />
   <Header />
   <main className="max-w-7xl mx-auto px-4 py-6">
     {children}

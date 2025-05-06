@@ -11,7 +11,7 @@ export default async function Page() {
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 py-16 md:py-24 flex flex-col items-center text-center">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent ">
             Discover Amazing Events Near You
           </h1>
 
