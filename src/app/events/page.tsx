@@ -7,7 +7,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from '../../components/ui/select'
 import { Card, CardContent, CardFooter, CardHeader } from '../../components/ui/card'
 import { SearchIcon, FilterIcon, CalendarIcon, MapPinIcon } from 'lucide-react'
@@ -19,25 +19,33 @@ export default function EventsPage() {
   const events = [
     {
       id: 1,
-      title: 'Tech Conference 2023',
-      date: 'Oct 15, 2023',
-      location: 'San Francisco, CA',
+      title: 'Tech Conference 2025',
+      date: 'May 15, 2025',
+      location: 'Hyderabad, Telangana',
       category: 'Conference',
       image: '/placeholder-event.jpg',
     },
     {
       id: 2,
       title: 'Music Festival',
-      date: 'Nov 20, 2023',
-      location: 'Los Angeles, CA',
+      date: 'June 20, 2025',
+      location: 'Ahamedabad, Gujurat',
       category: 'Concert',
       image: '/placeholder-event.jpg',
     },
     {
       id: 3,
       title: 'Design Workshop',
-      date: 'Dec 5, 2023',
-      location: 'New York, NY',
+      date: 'June 5, 2025',
+      location: 'Bengaluru, Karnataka',
+      category: 'Workshop',
+      image: '/placeholder-event.jpg',
+    },
+    {
+      id: 4,
+      title: 'Swiftiees Unite',
+      date: 'May 25, 2025',
+      location: 'Hyderabad, Telanga',
       category: 'Workshop',
       image: '/placeholder-event.jpg',
     },
@@ -98,9 +106,9 @@ export default function EventsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Locations</SelectItem>
-              <SelectItem value="sf">San Francisco</SelectItem>
-              <SelectItem value="ny">New York</SelectItem>
-              <SelectItem value="la">Los Angeles</SelectItem>
+              <SelectItem value="sf">Hyderabad</SelectItem>
+              <SelectItem value="ny">Ahamedabad</SelectItem>
+              <SelectItem value="la">Bengaluru</SelectItem>
             </SelectContent>
           </Select>
         </AnimatedDiv>
