@@ -1,10 +1,10 @@
-import { currentUser } from '@clerk/nextjs/server'
-import Link from 'next/link'
-import { Button } from '../components/ui/button'
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
+import { currentUser } from '@clerk/nextjs/server';
+import Link from 'next/link';
+import { Button } from '../components/ui/button';
+import { SignInButton, SignUpButton } from '@clerk/nextjs';
 
 export default async function Page() {
-  const user = await currentUser()
+  const user = await currentUser();
 
   return (
     <div className="min-h-[calc(100vh-5rem)]">
@@ -95,7 +95,7 @@ export default async function Page() {
         </div>
       </section>
     </div>
-  )
+  );
 }
 
 // Simple event card component (would be in components folder)
@@ -111,7 +111,7 @@ function EventCard() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
 // Icons (would be imported from lucide-react)
@@ -135,7 +135,7 @@ function CalendarIcon(props: any) {
       <line x1="8" x2="8" y1="2" y2="6" />
       <line x1="3" x2="21" y1="10" y2="10" />
     </svg>
-  )
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -158,7 +158,7 @@ function TicketIcon(props: any) {
       <path d="M13 17v2" />
       <path d="M13 11v2" />
     </svg>
-  )
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -181,5 +181,5 @@ function UsersIcon(props: any) {
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
-  )
+  );
 }

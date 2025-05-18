@@ -17,7 +17,7 @@ export default function Pay() {
     const res = await fetch('/api/createOrder', {
     method: "POST",
     body: JSON.stringify({amount: amount*100}),
-    })
+    });
 
     const data = await res.json();
 
@@ -61,7 +61,7 @@ export default function Pay() {
 
       }
 
-    }
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const payment = new (window as any).Razorpay(paymentData);

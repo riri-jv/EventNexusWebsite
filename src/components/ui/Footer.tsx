@@ -1,5 +1,5 @@
-import Link from 'next/link'
-import { Logo } from './logo'
+import Link from 'next/link';
+import { Logo } from './logo';
 
 export function Footer() {
   return (
@@ -61,5 +61,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

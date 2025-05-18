@@ -1,18 +1,18 @@
-'use client'
+'use client';
 
-import { Button } from '../../components/ui/button'
-import { Input } from '../../components/ui/input'
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '../../components/ui/select'
-import { Card, CardContent, CardFooter, CardHeader } from '../../components/ui/card'
-import { SearchIcon, FilterIcon, CalendarIcon, MapPinIcon } from 'lucide-react'
-import { AnimatedDiv, AnimatedH1, AnimatedP } from '../../components/animated'
-import { staggerContainer, fadeIn } from '../../lib/motion'
+} from '../../components/ui/select';
+import { Card, CardContent, CardFooter, CardHeader } from '../../components/ui/card';
+import { SearchIcon, FilterIcon, CalendarIcon, MapPinIcon } from 'lucide-react';
+import { AnimatedDiv, AnimatedH1, AnimatedP } from '../../components/animated';
+import { staggerContainer, fadeIn } from '../../lib/motion';
 
 export default function EventsPage() {
   // This would be replaced with real data fetching
@@ -49,7 +49,7 @@ export default function EventsPage() {
       category: 'Workshop',
       image: '/placeholder-event.jpg',
     },
-  ]
+  ];
 
   return (
     <AnimatedDiv
@@ -149,5 +149,5 @@ export default function EventsPage() {
         </AnimatedDiv>
       </div>
     </AnimatedDiv>
-  )
+  );
 }

@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import { useTheme } from 'next-themes'
-import { useCallback } from 'react'
-import Particles from 'react-tsparticles'
-import { loadSlim } from 'tsparticles-slim'
-import type { Engine } from 'tsparticles-engine'
+import { useTheme } from 'next-themes';
+import { useCallback } from 'react';
+import Particles from 'react-tsparticles';
+import { loadSlim } from 'tsparticles-slim';
+import type { Engine } from 'tsparticles-engine';
 
 export default function StarryBackground() {
-  const { theme } = useTheme()
+  const { theme } = useTheme();
 
   const particlesInit = useCallback(async (engine: Engine) => {
-    await loadSlim(engine)
-  }, [])
+    await loadSlim(engine);
+  }, []);
 
   return (
     <Particles
@@ -87,5 +87,5 @@ export default function StarryBackground() {
         },
       }}
     />
-  )
+  );
 }

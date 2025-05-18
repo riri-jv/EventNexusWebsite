@@ -1,25 +1,25 @@
-'use server'
+'use server';
 
-import { redirect } from 'next/navigation'
-import { checkRole } from '@/utils/roles'
-import { SearchUsers } from './SearchUsers'
-import { clerkClient } from '@clerk/nextjs/server'
-import { removeRole, setRole } from './_actions'
-import Image from 'next/image'
-import { format } from 'date-fns'
+import { redirect } from 'next/navigation';
+import { checkRole } from '@/utils/roles';
+import { SearchUsers } from './SearchUsers';
+import { clerkClient } from '@clerk/nextjs/server';
+import { removeRole, setRole } from './_actions';
+import Image from 'next/image';
+import { format } from 'date-fns';
 
 export default async function AdminDashboard(params: {
   searchParams: Promise<{ search?: string }>
 }) {
   if (!checkRole('admin')) {
-    redirect('/')
+    redirect('/');
   }
 
-  const query = (await params.searchParams).search
-  const client = await clerkClient()
-  const users = query 
-    ? (await client.users.getUserList({ query })).data 
-    : (await client.users.getUserList({ limit: 100 })).data // Increased limit for demo
+  const query = (await params.searchParams).search;
+  const client = await clerkClient();
+  const users = query
+    ? (await client.users.getUserList({ query })).data
+    : (await client.users.getUserList({ limit: 100 })).data; // Increased limit for demo
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -57,27 +57,27 @@ export default async function AdminDashboard(params: {
             <tbody className="bg-white divide-y divide-gray-200">
               {users.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-<td className="px-6 py-4 whitespace-nowrap">
-  <div className="flex items-center">
-    <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
-      <Image
-        src={user.imageUrl}
-        alt={`${user.firstName}'s profile`}
-        width={40}
-        height={40}
-        className="h-full w-full object-cover"
-      />
-    </div>
-    <div className="ml-4">
-      <div className="text-sm font-medium text-gray-900">
-        {user.firstName} {user.lastName}
-      </div>
-      <div className="text-sm text-gray-500">
-        @{user.username || 'no-username'}
-      </div>
-    </div>
-  </div>
-</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
+                        <Image
+                          src={user.imageUrl}
+                          alt={`${user.firstName}'s profile`}
+                          width={40}
+                          height={40}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.firstName} {user.lastName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          @{user.username || 'no-username'}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       {user.emailAddresses.find(
@@ -89,20 +89,19 @@ export default async function AdminDashboard(params: {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.publicMetadata.role === 'admin' 
-                        ? 'bg-purple-100 text-purple-800' 
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${user.publicMetadata.role === 'admin'
+                        ? 'bg-purple-100 text-purple-800'
                         : user.publicMetadata.role === 'moderator'
                           ? 'bg-blue-100 text-blue-800'
                           : 'bg-gray-100 text-gray-800'
-                    }`}>
+                      }`}>
                       {user.publicMetadata.role as string || 'No role'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {user.lastSignInAt 
-                        ? format(new Date(user.lastSignInAt), 'MMM d, yyyy') 
+                      {user.lastSignInAt
+                        ? format(new Date(user.lastSignInAt), 'MMM d, yyyy')
                         : 'Never signed in'}
                     </div>
                     <div className="text-sm text-gray-500">
@@ -161,5 +160,5 @@ export default async function AdminDashboard(params: {
         )}
       </div>
     </div>
-  )
+  );
 }

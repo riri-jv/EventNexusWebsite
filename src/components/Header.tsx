@@ -1,24 +1,24 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { useTheme } from 'next-themes'
+import Link from 'next/link';
+import { useTheme } from 'next-themes';
 import {
   SignInButton,
   SignUpButton,
   SignedIn,
   SignedOut,
   UserButton,
-} from '@clerk/nextjs'
-import { SunIcon, MoonIcon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+} from '@clerk/nextjs';
+import { SunIcon, MoonIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function Header() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), [])
+  useEffect(() => setMounted(true), []);
 
-  if (!mounted) return null
+  if (!mounted) return null;
 
   return (
     <header className="w-full px-4 py-4 shadow-sm bg-white dark:bg-gray-900">
@@ -68,5 +68,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }

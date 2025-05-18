@@ -1,4 +1,4 @@
-import { Variants } from 'framer-motion'
+import { Variants } from 'framer-motion';
 
 export const staggerContainer = (staggerChildren?: number, delayChildren?: number): Variants => {
   return {
@@ -9,8 +9,8 @@ export const staggerContainer = (staggerChildren?: number, delayChildren?: numbe
         delayChildren: delayChildren || 0,
       },
     },
-  }
-}
+  };
+};
 
 export const fadeIn = (
   direction: 'up' | 'down' | 'left' | 'right',
@@ -35,8 +35,8 @@ export const fadeIn = (
         ease: 'easeOut',
       },
     },
-  }
-}
+  };
+};
 
 export const slideIn = (
   direction: 'up' | 'down' | 'left' | 'right',
@@ -61,5 +61,5 @@ export const slideIn = (
         ease: 'easeOut',
       },
     },
-  }
-}
+  };
+};
