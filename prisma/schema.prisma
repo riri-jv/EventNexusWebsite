@@ -9,10 +9,10 @@ datasource db {
 
 model User {
   id                String           @id @default(auto()) @map("_id") @db.ObjectId
+  clerkId           String           @unique
   firstName         String
   lastName          String
   email             String           @unique
-  username          String           @unique
   createdAt         DateTime         @default(now())
   eventsAttended    Transaction[]
   eventsSponsored   Sponsorship[]

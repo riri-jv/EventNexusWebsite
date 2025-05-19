@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   const events = await prisma.event.findMany({
     include: {
-      createdBy: true
+      organizer: true
     }
   });
   return Response.json(events);
