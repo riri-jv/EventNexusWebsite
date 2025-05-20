@@ -1,4 +1,3 @@
-// app/layout.tsx
 import { ClerkProvider } from '@clerk/nextjs';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -32,12 +31,9 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-[#121212] text-black dark:text-white`}
-        >
-          {/* Wrap the entire UI in ThemeProvider ONCE here */}
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+        <body className="min-h-screen bg-background font-sans antialiased">
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <StarryBackground />
             <Header />
             <main className="max-w-7xl mx-auto px-4 py-6">
