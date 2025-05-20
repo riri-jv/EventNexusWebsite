@@ -12,12 +12,11 @@ model User {
   firstName         String
   lastName          String
   email             String           @unique
+  role              String
   createdAt         DateTime         @default(now())
   eventsAttended    Transaction[]
   eventsSponsored   Sponsorship[]
   eventsOrganized   Event[]          @relation("OrganizedEvents")
-  paymentAccountId  String?
-  paymentSetup      Boolean          @default(false)
 }
 
 model Event {

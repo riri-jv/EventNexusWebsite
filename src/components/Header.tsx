@@ -11,10 +11,21 @@ import {
 } from '@clerk/nextjs';
 import { SunIcon, MoonIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PublicRoles } from '@/types/globals';
+
+const roles = ["attendee", "organizer", "sponsor"];
 
 export default function Header() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [role, setRole] = useState<PublicRoles>('attendee');
 
   useEffect(() => setMounted(true), []);
 
@@ -50,12 +61,29 @@ export default function Header() {
           </button>
 
           <SignedOut>
+            <Select onValueChange={(value) => setRole(value as PublicRoles)} defaultValue="attendee">
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="attendee" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((rl) => (
+                  <SelectItem key={rl} value={rl}>
+                    {rl}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <SignInButton mode="modal">
               <button className="px-3 py-1.5 text-sm font-medium rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 Sign In
               </button>
             </SignInButton>
-            <SignUpButton mode="modal">
+
+            <SignUpButton
+              mode="modal"
+              unsafeMetadata={{ role }}
+            >
               <button className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                 Sign Up
               </button>

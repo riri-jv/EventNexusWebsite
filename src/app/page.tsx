@@ -1,7 +1,10 @@
 import { currentUser } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import { Button } from '../components/ui/button';
-import { SignInButton, SignUpButton } from '@clerk/nextjs';
+import { SignInButton } from '@clerk/nextjs';
+import { ClerkProvider, SignUpButton } from '@clerk/nextjs';
+
+const roles = ['attendee', 'organizer', 'sponsor'];
 
 export default async function Page() {
   const user = await currentUser();

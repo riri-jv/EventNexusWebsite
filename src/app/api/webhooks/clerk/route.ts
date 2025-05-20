@@ -1,5 +1,5 @@
 import { Webhook } from "svix";
-import { WebhookEvent } from "@clerk/nextjs/server";
+import { WebhookEvent, clerkClient } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
@@ -18,7 +18,8 @@ export async function POST(req: Request) {
     "svix-signature": headerPayload.get("svix-signature")!,
   }) as WebhookEvent;
   if (event.type === "user.created") {
-    const { id, email_addresses, first_name, last_name } = event.data;
+    const { id, email_addresses, first_name, last_name, unsafe_metadata } = event.data;
+    const role = (unsafe_metadata.role as string) || "attendee";
     await prisma.user.upsert({
       where: { id },
       update: {},
@@ -27,9 +28,14 @@ export async function POST(req: Request) {
         email: email_addresses[0].email_address,
         firstName: first_name ?? "",
         lastName: last_name ?? "",
-        paymentSetup: false,
+        role,
       },
     });
+    const client = await clerkClient();
+    await client.users.updateUser(id, {
+      publicMetadata: { role },
+    });
+
   } else {
     console.warn("unexpected hook:", event.type);
     console.warn(event);
