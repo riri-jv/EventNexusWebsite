@@ -38,7 +38,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Event not found' }, { status: 404 });
     }
 
-    // Calculate total amount and validate items
     let totalAmount = 0;
     const tickets: any[] = [];
     const sponsorships: any[] = [];
@@ -56,7 +55,7 @@ export async function POST(req: NextRequest) {
         tickets.push({
           ticketTypeId: item.id,
           quantity: item.quantity || 1,
-          fees: 0, // You can calculate fees here if needed
+          fees: 0,
           currency: ticketType.currency,
           status: 'pending',
         });
@@ -73,17 +72,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Create Razorpay order
     const order = await razorpay.orders.create({
-      amount: Math.round(totalAmount * 100), // Razorpay expects amount in smallest currency unit
-      currency: 'INR', // You might want to make this dynamic based on the event's currency
+      amount: Math.round(totalAmount * 100),
+      currency: 'INR',
       notes: {
         eventId,
         userId: user.id,
       },
     });
 
-    // Create transactions and sponsorships in database
     await prisma.$transaction(async (tx) => {
       for (const ticket of tickets) {
         await tx.transaction.create({

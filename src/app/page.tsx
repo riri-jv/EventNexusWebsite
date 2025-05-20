@@ -115,7 +115,7 @@ function EventCard() {
 }
 
 // Icons (would be imported from lucide-react)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function CalendarIcon(props: any) {
   return (
     <svg
@@ -138,7 +138,7 @@ function CalendarIcon(props: any) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function TicketIcon(props: any) {
   return (
     <svg
@@ -161,7 +161,7 @@ function TicketIcon(props: any) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function UsersIcon(props: any) {
   return (
     <svg

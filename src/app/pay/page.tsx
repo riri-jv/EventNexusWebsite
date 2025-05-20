@@ -31,7 +31,7 @@ export default function Pay() {
         email: user?.emailAddresses[0]?.emailAddress || "",
       },
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       handler: async function (response: any){
         //verify the payment
         const res = await fetch('/api/verifyOrder', {
@@ -63,7 +63,7 @@ export default function Pay() {
 
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const payment = new (window as any).Razorpay(paymentData);
     payment.open();
   };
