@@ -52,14 +52,13 @@ export async function POST(req: NextRequest) {
     const parsed = formSchema.safeParse(body);
 
     if (!parsed.success) {
-      console.log(parsed.data);
       return NextResponse.json({ message: 'Validation failed', errors: parsed.error.flatten() }, { status: 400 });
     }
 
     const data = parsed.data;
 
     const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
+      where: { id: userId },
     });
 
     if (!user) {
