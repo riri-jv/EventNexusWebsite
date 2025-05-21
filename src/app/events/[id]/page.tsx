@@ -317,12 +317,18 @@ export default function EventDetailsPage() {
       {/* Purchase CTA */}
       {isSignedIn ? (
         <div className="text-center pt-8">
-          {(canBuyTickets || canSponsor) && (
+          {!isOrganizer && (
+            (canBuyTickets && event.ticketTypes.some(ticket => ticket.quantity > 0)) || 
+            canSponsor
+          ) && (
             <Button 
               onClick={() => router.push(`/events/${id}/purchase`)}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {canBuyTickets ? 'Purchase Tickets' : 'Become a Sponsor'}
+              {canBuyTickets && event.ticketTypes.some(ticket => ticket.quantity > 0) 
+                ? 'Purchase Tickets' 
+                : 'Become a Sponsor'
+              }
             </Button>
           )}
         </div>
