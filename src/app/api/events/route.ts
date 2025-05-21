@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server'; 
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import {
   eventOverviewSchema,
@@ -20,6 +20,7 @@ export async function GET() {
       include: {
         ticketTypes: true,
         sponsorshipTypes: true,
+        organizer: true,
       },
       orderBy: {
         startTime: 'asc',
@@ -38,6 +39,7 @@ const formSchema = eventOverviewSchema
   .extend({
     ticketTypes: z.array(ticketTypeSchema),
     sponsorshipTypes: z.array(sponsorshipTypeSchema),
+    image: z.string().optional(),
   });
 
 
@@ -46,6 +48,17 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    if (!user) {
+      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    }
+
+    const role = user.publicMetadata.role as string;
+    if (role !== 'organizer' && role !== 'admin') {
+      return NextResponse.json({ message: 'Only organizers can create events' }, { status: 403 });
     }
 
     const body = await req.json();
@@ -57,12 +70,12 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    const user = await prisma.user.findUnique({
+    const dbUser = await prisma.user.findUnique({
       where: { id: userId },
     });
 
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+    if (!dbUser) {
+      return NextResponse.json({ message: 'User not found in database' }, { status: 404 });
     }
 
     const newEvent = await prisma.event.create({
@@ -73,8 +86,9 @@ export async function POST(req: NextRequest) {
         endTime: new Date(data.endTime),
         location: data.location,
         locationURL: data.locationURL,
+        images: data.image ? [data.image] : [],
         organizer: {
-          connect: { id: user.id },
+          connect: { id: dbUser.id },
         },
         ticketTypes: {
           create: data.ticketTypes.map((t) => ({
@@ -98,6 +112,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ eventId: newEvent.id }, { status: 201 });
   } catch (error) {
     console.error('[POST /api/events]', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      message: error instanceof Error ? error.message : 'Internal server error'
+    }, { status: 500 });
   }
 }

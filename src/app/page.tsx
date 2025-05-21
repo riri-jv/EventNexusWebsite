@@ -101,7 +101,6 @@ export default async function Page() {
   );
 }
 
-// Simple event card component (would be in components folder)
 function EventCard() {
   return (
     <div className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
@@ -117,8 +116,6 @@ function EventCard() {
   );
 }
 
-// Icons (would be imported from lucide-react)
- 
 function CalendarIcon(props: any) {
   return (
     <svg

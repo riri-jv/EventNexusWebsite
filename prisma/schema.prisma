@@ -17,6 +17,17 @@ model User {
   eventsAttended    Transaction[]
   eventsSponsored   Sponsorship[]
   eventsOrganized   Event[]          @relation("OrganizedEvents")
+  uploads           Upload[]
+}
+
+model Upload {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  filename    String
+  contentType String
+  data        Bytes
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
 }
 
 model Event {
@@ -42,7 +53,6 @@ model Event {
   images            String[]
 
   ticketTypes       TicketType[]
-
   sponsorshipTypes  SponsorshipType[]
 }
 
@@ -93,5 +103,5 @@ model Transaction {
   currency      String
   status        String
   razorpayId    String
-  createdAt     DateTime      @default(now())
+  createdAt     DateTime     @default(now())
 }
