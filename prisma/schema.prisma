@@ -39,7 +39,7 @@ model Event {
   organizer         User               @relation("OrganizedEvents", fields: [organizerId], references: [id])
   transactions      Transaction[]
   sponsorships      Sponsorship[]
-
+  eventrev          EventRevenue[]
   // event overview
   summary           String
   description       String
@@ -54,6 +54,15 @@ model Event {
 
   ticketTypes       TicketType[]
   sponsorshipTypes  SponsorshipType[]
+}
+
+model EventRevenue {
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  ticketRevenue     Int           @default(0)
+  sponsorRevenue    Int           @default(0)
+  paid              Int           @default(0)
+  event             Event         @relation(fields: [eventId], references: [id])
+  eventId           String        @db.ObjectId
 }
 
 model TicketType {
@@ -87,7 +96,7 @@ model Sponsorship {
   sponsorshipType    SponsorshipType  @relation(fields: [sponsorshipTypeId], references: [id])
   sponsorshipTypeId  String           @db.ObjectId
   status             String
-  razorpayId        String?
+  razorpayId         String?
   createdAt          DateTime         @default(now())
 }
 

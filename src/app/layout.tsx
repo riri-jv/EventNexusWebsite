@@ -7,6 +7,7 @@ import { ThemeProvider } from 'next-themes';
 import { Footer } from '../components/ui/Footer';
 import StarryBackground from '../components/starryBackground';
 import 'leaflet/dist/leaflet.css';
+import { Toaster } from 'sonner';
 
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>

@@ -106,6 +106,9 @@ export async function POST(req: NextRequest) {
             currency: s.currency,
           })),
         },
+        eventrev: {
+          create: {}
+        }
       },
     });
 
