@@ -3,9 +3,13 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import Razorpay from 'razorpay';
 
+if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_SECRET_ID) {
+  throw new Error('Missing Razorpay credentials');
+}
+
 const razorpay = new Razorpay({
-  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID as string,
-  key_secret: process.env.RAZORPAY_SECRET_ID as string,
+  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_SECRET_ID,
 });
 
 export async function POST(req: NextRequest) {
@@ -16,7 +20,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { eventId, items } = body;
+    const { eventId, items, type } = body;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -39,27 +43,27 @@ export async function POST(req: NextRequest) {
     }
 
     let totalAmount = 0;
-    const tickets: any[] = [];
-    const sponsorships: any[] = [];
+    const tickets: { ticketTypeId: string; quantity: number; status: string }[] = [];
+    const sponsorships: { sponsorshipTypeId: string; status: string }[] = [];
 
-    for (const item of items) {
-      if (item.type === 'ticket') {
+    if (type === 'ticket') {
+      for (const item of items) {
         const ticketType = event.ticketTypes.find(t => t.id === item.id);
         if (!ticketType) {
           return NextResponse.json({ message: 'Invalid ticket type' }, { status: 400 });
         }
-        if (ticketType.quantity < (item.quantity || 1)) {
+        if (ticketType.quantity < item.quantity) {
           return NextResponse.json({ message: 'Not enough tickets available' }, { status: 400 });
         }
-        totalAmount += ticketType.price * (item.quantity || 1);
+        totalAmount += ticketType.price * item.quantity;
         tickets.push({
           ticketTypeId: item.id,
-          quantity: item.quantity || 1,
-          fees: 0,
-          currency: ticketType.currency,
+          quantity: item.quantity,
           status: 'pending',
         });
-      } else {
+      }
+    } else {
+      for (const item of items) {
         const sponsorshipType = event.sponsorshipTypes.find(s => s.id === item.id);
         if (!sponsorshipType) {
           return NextResponse.json({ message: 'Invalid sponsorship type' }, { status: 400 });
@@ -89,6 +93,8 @@ export async function POST(req: NextRequest) {
             eventId,
             userId: user.id,
             razorpayId: order.id,
+            fees: 0,
+            currency: 'INR',
           },
         });
       }
@@ -96,9 +102,11 @@ export async function POST(req: NextRequest) {
       for (const sponsorship of sponsorships) {
         await tx.sponsorship.create({
           data: {
-            ...sponsorship,
+            sponsorshipTypeId: sponsorship.sponsorshipTypeId,
+            status: sponsorship.status,
             eventId,
             userId: user.id,
+            razorpayId: order.id,
           },
         });
       }
@@ -111,6 +119,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('[POST /api/orders/create]', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

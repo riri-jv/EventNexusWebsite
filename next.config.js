@@ -10,11 +10,10 @@ const nextConfig = {
         pathname: '/api/uploads/**',
       },
       {
-        protocol: 'https',
+        protocol: 'http',
         hostname: 'eventnexus.in',
-        port: '3000',
         pathname: '/api/uploads/**',
-      }
+      },
     ]
   },
 };

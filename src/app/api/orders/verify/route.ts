@@ -37,27 +37,27 @@ export async function POST(req: NextRequest) {
       });
 
       for (const transaction of transactions) {
-        await tx.transaction.update({
-          where: { id: transaction.id },
-          data: { status: 'completed' },
-        });
+        if (transaction.status === 'pending') {
+          await tx.transaction.update({
+            where: { id: transaction.id },
+            data: { status: 'completed' },
+          });
 
-        await tx.ticketType.update({
-          where: { id: transaction.ticketTypeId },
-          data: {
-            quantity: {
-              decrement: transaction.quantity,
+          await tx.ticketType.update({
+            where: { id: transaction.ticketTypeId },
+            data: {
+              quantity: {
+                decrement: transaction.quantity,
+              },
             },
-          },
-        });
+          });
+        }
       }
 
       await tx.sponsorship.updateMany({
         where: {
-          AND: [
-            { userId },
-            { status: 'pending' },
-          ],
+          razorpayId: orderId,
+          status: 'pending',
         },
         data: { status: 'completed' },
       });

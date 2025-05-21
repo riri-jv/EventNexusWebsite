@@ -87,6 +87,7 @@ model Sponsorship {
   sponsorshipType    SponsorshipType  @relation(fields: [sponsorshipTypeId], references: [id])
   sponsorshipTypeId  String           @db.ObjectId
   status             String
+  razorpayId        String?
   createdAt          DateTime         @default(now())
 }
 

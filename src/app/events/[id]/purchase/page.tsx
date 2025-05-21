@@ -5,51 +5,50 @@ import { useParams, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import Script from 'next/script';
 
-type TicketType = {
-  id: string;
-  name: string;
-  price: number;
-  currency: string;
-  quantity: number;
-};
-
-type SponsorshipType = {
-  id: string;
-  name: string;
-  benefits: string[];
-  price: number;
-  currency: string;
-};
-
-type Sponsorship = {
-  id: string;
-  status: string;
-};
-
-type EventData = {
+type Event = {
   id: string;
   summary: string;
-  ticketTypes: TicketType[];
-  sponsorshipTypes: SponsorshipType[];
-  sponsorships?: Sponsorship[];
+  ticketTypes: {
+    id: string;
+    name: string;
+    price: number;
+    currency: string;
+    quantity: number;
+  }[];
+  sponsorshipTypes: {
+    id: string;
+    name: string;
+    benefits: string[];
+    price: number;
+    currency: string;
+  }[];
 };
 
 type PurchaseItem = {
   id: string;
-  type: 'ticket' | 'sponsorship';
-  quantity?: number;
+  quantity: number;
 };
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function PurchasePage() {
   const { id } = useParams();
   const router = useRouter();
-  const { user } = useUser();
-  const [event, setEvent] = useState<EventData | null>(null);
+  const { user, isSignedIn } = useUser();
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState<PurchaseItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>('');
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -59,212 +58,269 @@ export default function PurchasePage() {
 
   useEffect(() => {
     const fetchEvent = async () => {
-      const res = await fetch(`/api/events/${id}`);
-      const data = await res.json();
-      setEvent(data);
+      try {
+        const res = await fetch(`/api/events/${id}`);
+        if (!res.ok) throw new Error('Failed to fetch event');
+        const data = await res.json();
+        setEvent(data);
+
+        if (user?.publicMetadata.role === 'sponsor') {
+          setSelectedItems(data.sponsorshipTypes.map((type: any) => ({ id: type.id, quantity: 0 })));
+        } else {
+          setSelectedItems(data.ticketTypes.map((type: any) => ({ id: type.id, quantity: 0 })));
+        }
+      } catch (error) {
+        console.error('Error fetching event:', error);
+        toast.error('Failed to load event details');
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchEvent();
-  }, [id]);
 
-  // Redirect if user is organizer or not logged in
-  useEffect(() => {
-    if (!user) {
-      router.push(`/events/${id}`);
-      return;
+    if (isSignedIn) {
+      fetchEvent();
     }
-    
-    if (userRole === 'organizer') {
-      router.push(`/events/${id}`);
-      return;
-    }
-  }, [user, userRole, id, router]);
+  }, [id, isSignedIn, user?.publicMetadata.role]);
 
-  const initiatePayment = async () => {
-    if (!user || !event || selectedItems.length === 0) return;
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventId: id,
-          items: selectedItems
-        }),
-      });
-
-      const order = await res.json();
-      
-      const paymentData = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        order_id: order.id,
-        amount: order.amount,
-        currency: order.currency,
-        name: event.summary,
-        description: "Event purchase",
-        prefill: {
-          name: user.fullName,
-          email: user.emailAddresses[0]?.emailAddress,
-          contact: user.phoneNumbers[0]?.phoneNumber || "",
-        },
-        handler: async function(response: any) {
-          const verificationRes = await fetch('/api/orders/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              orderId: order.id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
-
-          const verificationData = await verificationRes.json();
-          
-          if (verificationData.success) {
-            router.push(`/events/${id}?payment=success`);
-          } else {
-            alert('Payment verification failed');
-          }
-        },
-      };
-
-      const razorpay = new (window as any).Razorpay(paymentData);
-      razorpay.open();
-    } catch (error) {
-      console.error('Payment initiation failed:', error);
-      alert('Failed to initiate payment');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleItem = (id: string, type: 'ticket' | 'sponsorship') => {
-    setSelectedItems(prev => {
-      const existing = prev.find(item => item.id === id);
-      if (existing) {
-        return prev.filter(item => item.id !== id);
-      }
-      if (type === 'ticket') {
-        return [...prev, { id, type, quantity: 1 }];
-      }
-      return [...prev, { id, type }];
-    });
-  };
-
-  const updateQuantity = (id: string, quantity: number) => {
-    setSelectedItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, quantity } : item
+  const handleQuantityChange = (itemId: string, value: string) => {
+    const quantity = parseInt(value) || 0;
+    setSelectedItems(prev =>
+      prev.map(item =>
+        item.id === itemId ? { ...item, quantity: Math.max(0, quantity) } : item
       )
     );
   };
 
-  if (!event) return <div>Loading...</div>;
+  const calculateTotal = () => {
+    if (!event) return { total: 0, currency: '' };
 
-  const isSponsor = userRole === 'sponsor';
+    const items = userRole === 'sponsor' ? event.sponsorshipTypes : event.ticketTypes;
+    const selected = selectedItems.filter(item => item.quantity > 0);
+    
+    if (selected.length === 0) return { total: 0, currency: '' };
+
+    const first = items.find(item => item.id === selected[0].id);
+    const currency = first?.currency || '';
+    
+    const total = selected.reduce((sum, item) => {
+      const itemType = items.find(t => t.id === item.id);
+      return sum + (itemType?.price || 0) * item.quantity;
+    }, 0);
+
+    return { total, currency };
+  };
+
+  const handlePurchase = async () => {
+    if (!event || processingPayment) return;
+
+    const selectedWithQuantity = selectedItems.filter(item => item.quantity > 0);
+    if (selectedWithQuantity.length === 0) {
+      toast.error('Please select at least one item to purchase');
+      return;
+    }
+
+    try {
+      setProcessingPayment(true);
+      const response = await fetch('/api/orders/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId: event.id,
+          items: selectedWithQuantity,
+          type: userRole === 'sponsor' ? 'sponsorship' : 'ticket',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create order');
+      }
+
+      const { id: orderId, amount, currency } = await response.json();
+
+      // Initialize Razorpay payment
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: amount,
+        currency: currency,
+        name: 'EventNexus',
+        description: `Purchase for ${event.summary}`,
+        order_id: orderId,
+        handler: async function (response: any) {
+          try {
+            const verifyResponse = await fetch('/api/orders/verify', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                orderId,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            if (!verifyResponse.ok) {
+              throw new Error('Payment verification failed');
+            }
+
+            router.push(`/events/${id}?payment=success`);
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            toast.error('Payment verification failed');
+            setProcessingPayment(false);
+          }
+        },
+        prefill: {
+          name: user?.fullName || undefined,
+          email: user?.primaryEmailAddress?.emailAddress || undefined,
+        },
+        modal: {
+          ondismiss: function() {
+            setProcessingPayment(false);
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast.error('Failed to process your purchase');
+      setProcessingPayment(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="container mx-auto py-8 px-4">Loading...</div>;
+  }
+
+  if (!event) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
+        <p>The event you're looking for doesn't exist or you don't have permission to view it.</p>
+        <Button className="mt-4" onClick={() => router.push('/events')}>
+          Back to Events
+        </Button>
+      </div>
+    );
+  }
+
+  const items = userRole === 'sponsor' ? event.sponsorshipTypes : event.ticketTypes;
+  const { total, currency } = calculateTotal();
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-      
-      <h1 className="text-3xl font-bold mb-8">{event.summary}</h1>
-      
-      {/* Tickets - show to all users except sponsors who already have sponsorship */}
-      {(!isSponsor || (isSponsor && event.sponsorships?.some(s => s.status === 'completed'))) && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Tickets</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {event.ticketTypes.map((ticket: TicketType) => (
-              <Card key={ticket.id} className="p-4">
-                <div className="flex justify-between items-start mb-4">
+    <>
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="lazyOnload"
+      />
+      <div className="container mx-auto py-8 px-4">
+        <Button
+          variant="outline"
+          className="mb-6"
+          onClick={() => router.push(`/events/${id}`)}
+        >
+          ← Back to Event
+        </Button>
+
+        <h1 className="text-3xl font-bold mb-6">
+          {userRole === 'sponsor' ? 'Sponsor Event' : 'Purchase Tickets'}
+        </h1>
+        <h2 className="text-xl mb-8">{event.summary}</h2>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            {items.map((item) => (
+              <Card key={item.id} className="p-6">
+                <div className="flex flex-col space-y-4">
                   <div>
-                    <h3 className="text-lg font-medium">{ticket.name}</h3>
-                    <p className="text-sm text-gray-600">
-                      {ticket.price} {ticket.currency}
+                    <h3 className="text-lg font-semibold">{item.name}</h3>
+                    <p className="text-gray-600">
+                      {item.price} {item.currency}
                     </p>
-                    {ticket.quantity === 0 && (
-                      <p className="text-sm text-red-600 mt-1 font-medium">
-                        Sold out
-                      </p>
+                    {userRole === 'sponsor' && 'benefits' in item && (
+                      <div className="mt-2">
+                        <strong className="text-sm">Benefits:</strong>
+                        <ul className="list-disc list-inside text-sm text-gray-600">
+                          {item.benefits.map((benefit, idx) => (
+                            <li key={idx}>{benefit}</li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </div>
-                  <Button
-                    onClick={() => toggleItem(ticket.id, 'ticket')}
-                    variant={selectedItems.some(item => item.id === ticket.id) ? "destructive" : "default"}
-                    disabled={ticket.quantity === 0}
-                  >
-                    {selectedItems.some(item => item.id === ticket.id) ? 'Remove' : 'Add'}
-                  </Button>
-                </div>
-                {selectedItems.some(item => item.id === ticket.id) && ticket.quantity > 0 && (
-                  <div className="mt-2">
-                    <label className="text-sm">Quantity:</label>
-                    <input
+
+                  {'quantity' in item && (
+                    <p className="text-sm text-gray-600">
+                      {item.quantity} available
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-4">
+                    <Label htmlFor={`quantity-${item.id}`} className="flex-none">
+                      Quantity:
+                    </Label>
+                    <Input
+                      id={`quantity-${item.id}`}
                       type="number"
-                      min="1"
-                      max={ticket.quantity}
-                      value={selectedItems.find(item => item.id === ticket.id)?.quantity || 1}
-                      onChange={(e) => updateQuantity(ticket.id, parseInt(e.target.value))}
-                      className="ml-2 w-20 p-1 border rounded"
+                      min={0}
+                      max={'quantity' in item ? item.quantity : 1}
+                      value={selectedItems.find(si => si.id === item.id)?.quantity || 0}
+                      onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                      className="w-24"
                     />
                   </div>
-                )}
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Sponsorships - only show to sponsors who don't have an active sponsorship */}
-      {isSponsor && !event.sponsorships?.some(s => s.status === 'completed') && (
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Sponsorship Opportunities</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {event.sponsorshipTypes.map((sponsor: SponsorshipType) => (
-              <Card key={sponsor.id} className="p-4">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-medium">{sponsor.name}</h3>
-                    <p className="text-sm text-gray-600">
-                      {sponsor.price} {sponsor.currency}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => toggleItem(sponsor.id, 'sponsorship')}
-                    variant={selectedItems.some(item => item.id === sponsor.id) ? "destructive" : "default"}
-                  >
-                    {selectedItems.some(item => item.id === sponsor.id) ? 'Remove' : 'Add'}
-                  </Button>
                 </div>
-                <ul className="list-disc list-inside text-sm">
-                  {sponsor.benefits.map((benefit, idx) => (
-                    <li key={idx}>{benefit}</li>
-                  ))}
-                </ul>
               </Card>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* Checkout */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t p-4">
-        <div className="container mx-auto flex justify-between items-center">
           <div>
-            <p className="text-lg font-semibold">
-              Selected: {selectedItems.length} item(s)
-            </p>
+            <Card className="p-6 sticky top-6">
+              <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
+              <div className="space-y-4">
+                {selectedItems
+                  .filter(item => item.quantity > 0)
+                  .map(item => {
+                    const itemDetails = items.find(i => i.id === item.id);
+                    return (
+                      <div key={item.id} className="flex justify-between">
+                        <span>
+                          {itemDetails?.name} × {item.quantity}
+                        </span>
+                        <span>
+                          {(itemDetails?.price || 0) * item.quantity} {itemDetails?.currency}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex justify-between text-lg font-semibold">
+                    <span>Total</span>
+                    <span>
+                      {total} {currency}
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full mt-6"
+                  size="lg"
+                  disabled={total === 0 || processingPayment}
+                  onClick={handlePurchase}
+                >
+                  {processingPayment ? 'Processing...' : `Pay ${total} ${currency}`}
+                </Button>
+              </div>
+            </Card>
           </div>
-          <Button
-            onClick={initiatePayment}
-            disabled={selectedItems.length === 0 || loading}
-            className="w-40"
-          >
-            {loading ? 'Processing...' : 'Proceed to Pay'}
-          </Button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
