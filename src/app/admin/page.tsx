@@ -72,9 +72,6 @@ export default async function AdminDashboard(params: {
                         <div className="text-sm font-medium text-gray-900">
                           {user.firstName} {user.lastName}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          @{user.username || 'no-username'}
-                        </div>
                       </div>
                     </div>
                   </td>
@@ -84,17 +81,13 @@ export default async function AdminDashboard(params: {
                         (email) => email.id === user.primaryEmailAddressId
                       )?.emailAddress}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {user.phoneNumbers[0]?.phoneNumber || 'No phone'}
-                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${user.publicMetadata.role === 'admin'
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      user.publicMetadata.role === 'admin'
                         ? 'bg-purple-100 text-purple-800'
-                        : user.publicMetadata.role === 'moderator'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
                       {user.publicMetadata.role as string || 'No role'}
                     </span>
                   </td>
@@ -116,26 +109,7 @@ export default async function AdminDashboard(params: {
                         type="submit"
                         className="text-indigo-600 hover:text-indigo-900 text-xs font-medium px-2.5 py-1.5 rounded-md bg-indigo-50 hover:bg-indigo-100 transition-colors"
                       >
-                        Admin
-                      </button>
-                    </form>
-                    <form action={setRole} className="inline-block">
-                      <input type="hidden" value={user.id} name="id" />
-                      <input type="hidden" value="moderator" name="role" />
-                      <button
-                        type="submit"
-                        className="text-blue-600 hover:text-blue-900 text-xs font-medium px-2.5 py-1.5 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors"
-                      >
-                        Moderator
-                      </button>
-                    </form>
-                    <form action={removeRole} className="inline-block">
-                      <input type="hidden" value={user.id} name="id" />
-                      <button
-                        type="submit"
-                        className="text-gray-600 hover:text-gray-900 text-xs font-medium px-2.5 py-1.5 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors"
-                      >
-                        Remove
+                        Make Admin
                       </button>
                     </form>
                   </td>
