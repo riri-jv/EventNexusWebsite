@@ -12,7 +12,7 @@ export default function About() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mt-6 text-gray-900 dark:text-white">About EventNexus</h1>
           <p className="mt-4 text-xl text-gray-600 dark:text-gray-300">
-            Revolutionizing the event industry one ticket at a time
+            Revolutionizing the event industry one ticket at a time.
           </p>
         </div>
 
