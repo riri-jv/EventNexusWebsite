@@ -4,7 +4,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 interface EventRevenue {
@@ -27,9 +26,7 @@ export default function RevenuePage() {
   const [paidAmounts, setPaidAmounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
-  // Initialize paid amounts when revenues are loaded
   useEffect(() => {
     const initialPaidAmounts = revenues.reduce((acc, revenue) => {
       acc[revenue.event.id] = revenue.paid;
@@ -38,7 +35,6 @@ export default function RevenuePage() {
     setPaidAmounts(initialPaidAmounts);
   }, [revenues]);
 
-  // Update paid amount
   const updatePaidAmount = async (eventId: string, paid: number) => {
     try {
       const res = await fetch('/api/admin/revenue', {
@@ -55,14 +51,12 @@ export default function RevenuePage() {
       }
 
       toast.success('Payment amount updated successfully');
-      // Refresh the data
       fetchData();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update paid amount');
     }
   };
 
-  // Handle paid amount change
   const handlePaidChange = (eventId: string, value: number) => {
     setPaidAmounts(prev => ({
       ...prev,
@@ -70,7 +64,6 @@ export default function RevenuePage() {
     }));
   };
 
-  // Fetch revenue data
   const fetchData = async () => {
     try {
       const res = await fetch('/api/admin/revenue');
@@ -80,7 +73,7 @@ export default function RevenuePage() {
       const data = await res.json();
       setRevenues(data.data);
       setError(null);
-    } catch (error) {
+    } catch {
       setError('Failed to load revenue data');
     } finally {
       setLoading(false);

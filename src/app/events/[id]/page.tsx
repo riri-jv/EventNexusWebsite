@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
-// Dynamically import the map component to avoid SSR issues
 const LocationView = dynamic(() => import('@/components/LocationView'), { ssr: false });
 
 type Event = {
@@ -118,7 +117,7 @@ export default function EventDetailsPage() {
     return (
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
-        <p>The event you're looking for doesn't exist or you don't have permission to view it.</p>
+        <p>The event you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.</p>
         <Button className="mt-4" onClick={() => router.push('/events')}>
           Back to Events
         </Button>
@@ -135,7 +134,6 @@ export default function EventDetailsPage() {
   ) : [];
 
   const isOrganizer = userRole === 'organizer' && event.organizer.id === user?.id;
-  const isAttendee = userRole === 'attendee';
   const isSponsor = userRole === 'sponsor';
   const canBuyTickets = !isSponsor && event.ticketTypes.some(t => t.quantity > 0);
   const canSponsor = isSponsor && !userSponsorships.length;

@@ -10,7 +10,7 @@ export default clerkMiddleware(async (auth, req) => {
   const session = await auth();
   const role = session.sessionClaims?.metadata?.role;
 
-  const url = new URL('/', req.url); // Redirect to home if unauthorized
+  const url = new URL('/', req.url);
 
   if (isAdminRoute(req) && role !== 'admin') {
     return NextResponse.redirect(url);
@@ -31,7 +31,6 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and static assets
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api|trpc)(.*)',
   ],

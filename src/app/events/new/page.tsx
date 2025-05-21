@@ -10,7 +10,7 @@ import {
 } from "@/lib/schemas/events";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ const formSchema = z.object({
   ticketTypes: z.array(ticketTypeSchema),
   sponsorshipTypes: z.array(sponsorshipTypeSchema),
   image: z.string().optional(),
+  locationURL: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -35,13 +36,9 @@ type FormValues = z.infer<typeof formSchema>;
 export default function CreateEventPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
+
   const [locationURL, setLocationURL] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (isLoaded && user && user.publicMetadata.role !== 'organizer' && user.publicMetadata.role !== 'admin') {
-    router.push('/events');
-    return null;
-  }
 
   const {
     register,
@@ -70,6 +67,16 @@ export default function CreateEventPage() {
     remove: removeSponsor,
   } = useFieldArray({ control, name: "sponsorshipTypes" });
 
+  useEffect(() => {
+    if (isLoaded && user && user.publicMetadata.role !== 'organizer' && user.publicMetadata.role !== 'admin') {
+      router.push("/events");
+    }
+  }, [isLoaded, user, router]);
+
+  if (!isLoaded || (user && user.publicMetadata.role !== 'organizer' && user.publicMetadata.role !== 'admin')) {
+    return null;
+  }
+
   const onSubmit = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
@@ -82,26 +89,21 @@ export default function CreateEventPage() {
       const result = await res.json();
 
       if (res.ok) {
-        toast.success('Event created successfully!');
+        toast.success("Event created successfully!");
         router.push(`/events/${result.eventId}`);
       } else {
-        toast.error(result.message || 'Failed to create event');
+        toast.error(result.message || "Failed to create event");
       }
     } catch (error) {
-      toast.error('Something went wrong. Please try again.');
+      toast.error("Something went wrong. Please try again.");
       console.error(error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!isLoaded) return null;
-
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="max-w-4xl mx-auto p-6 space-y-8"
-    >
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl mx-auto p-6 space-y-8">
       <Card className="p-6">
         <h2 className="text-2xl font-bold mb-6">Event Overview</h2>
         <div className="space-y-6">
@@ -119,9 +121,7 @@ export default function CreateEventPage() {
               className="w-full"
               placeholder="Enter event summary"
             />
-            {errors.summary && (
-              <p className="text-red-500 text-sm mt-1">{errors.summary.message}</p>
-            )}
+            {errors.summary && <p className="text-red-500 text-sm mt-1">{errors.summary.message}</p>}
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">Description</label>
@@ -130,9 +130,7 @@ export default function CreateEventPage() {
               className="w-full h-32 rounded-md border resize-none focus:ring-2 focus:ring-blue-500 p-3"
               placeholder="Enter event description"
             />
-            {errors.description && (
-              <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
-            )}
+            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
           </div>
         </div>
       </Card>
@@ -142,36 +140,18 @@ export default function CreateEventPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="text-sm font-medium mb-2 block">Start Time</label>
-            <Input
-              type="datetime-local"
-              {...register("startTime")}
-              className="w-full"
-            />
-            {errors.startTime && (
-              <p className="text-red-500 text-sm mt-1">{errors.startTime.message}</p>
-            )}
+            <Input type="datetime-local" {...register("startTime")} className="w-full" />
+            {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime.message}</p>}
           </div>
           <div>
             <label className="text-sm font-medium mb-2 block">End Time</label>
-            <Input
-              type="datetime-local"
-              {...register("endTime")}
-              className="w-full"
-            />
-            {errors.endTime && (
-              <p className="text-red-500 text-sm mt-1">{errors.endTime.message}</p>
-            )}
+            <Input type="datetime-local" {...register("endTime")} className="w-full" />
+            {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime.message}</p>}
           </div>
           <div className="md:col-span-2">
             <label className="text-sm font-medium mb-2 block">Location Name</label>
-            <Input
-              {...register("location")}
-              className="w-full"
-              placeholder="Enter location name"
-            />
-            {errors.location && (
-              <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>
-            )}
+            <Input {...register("location")} className="w-full" placeholder="Enter location name" />
+            {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>}
           </div>
         </div>
 
@@ -186,9 +166,7 @@ export default function CreateEventPage() {
             }}
           />
           <input type="hidden" {...register("locationURL")} value={locationURL} />
-          {errors.locationURL && (
-            <p className="text-red-500 text-sm mt-1">{errors.locationURL.message}</p>
-          )}
+          {errors.locationURL && <p className="text-red-500 text-sm mt-1">{errors.locationURL.message}</p>}
         </div>
       </Card>
 
@@ -196,17 +174,11 @@ export default function CreateEventPage() {
         <h2 className="text-2xl font-bold mb-6">Ticket Types</h2>
         <div className="space-y-6">
           {ticketFields.map((field, index) => (
-            <div
-              key={field.id}
-              className="p-4 border rounded-lg space-y-4 bg-gray-50"
-            >
+            <div key={field.id} className="p-4 border rounded-lg space-y-4 bg-gray-50">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Name</label>
-                  <Input
-                    {...register(`ticketTypes.${index}.name`)}
-                    placeholder="Ticket name"
-                  />
+                  <Input {...register(`ticketTypes.${index}.name`)} placeholder="Ticket name" />
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">Price</label>
@@ -217,17 +189,18 @@ export default function CreateEventPage() {
                     placeholder="Price"
                   />
                   {errors.ticketTypes?.[index]?.price && (
-                    <p className="text-red-500 text-sm mt-1">{errors.ticketTypes[index].price?.message}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.ticketTypes[index].price?.message}
+                    </p>
                   )}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">Currency</label>
-                  <Input
-                    {...register(`ticketTypes.${index}.currency`)}
-                    placeholder="Currency"
-                  />
+                  <Input {...register(`ticketTypes.${index}.currency`)} placeholder="Currency" />
                   {errors.ticketTypes?.[index]?.currency && (
-                    <p className="text-red-500 text-sm mt-1">{errors.ticketTypes[index].currency?.message}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.ticketTypes[index].currency?.message}
+                    </p>
                   )}
                 </div>
                 <div>
@@ -240,16 +213,13 @@ export default function CreateEventPage() {
                     placeholder="Quantity"
                   />
                   {errors.ticketTypes?.[index]?.quantity && (
-                    <p className="text-red-500 text-sm mt-1">{errors.ticketTypes[index].quantity?.message}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.ticketTypes[index].quantity?.message}
+                    </p>
                   )}
                 </div>
               </div>
-              <Button
-                type="button"
-                onClick={() => removeTicket(index)}
-                variant="destructive"
-                size="sm"
-              >
+              <Button type="button" onClick={() => removeTicket(index)} variant="destructive" size="sm">
                 Remove Ticket
               </Button>
             </div>
@@ -268,17 +238,11 @@ export default function CreateEventPage() {
         <h2 className="text-2xl font-bold mb-6">Sponsorship Types</h2>
         <div className="space-y-6">
           {sponsorFields.map((field, index) => (
-            <div
-              key={field.id}
-              className="p-4 border rounded-lg space-y-4 bg-gray-50"
-            >
+            <div key={field.id} className="p-4 border rounded-lg space-y-4 bg-gray-50">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-2 block">Name</label>
-                  <Input
-                    {...register(`sponsorshipTypes.${index}.name`)}
-                    placeholder="Sponsorship name"
-                  />
+                  <Input {...register(`sponsorshipTypes.${index}.name`)} placeholder="Sponsorship name" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium mb-2 block">Benefits</label>
@@ -296,33 +260,31 @@ export default function CreateEventPage() {
                     placeholder="Price"
                   />
                   {errors.sponsorshipTypes?.[index]?.price && (
-                    <p className="text-red-500 text-sm mt-1">{errors.sponsorshipTypes[index].price?.message}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.sponsorshipTypes[index].price?.message}
+                    </p>
                   )}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">Currency</label>
-                  <Input
-                    {...register(`sponsorshipTypes.${index}.currency`)}
-                    placeholder="Currency"
-                  />
+                  <Input {...register(`sponsorshipTypes.${index}.currency`)} placeholder="Currency" />
                   {errors.sponsorshipTypes?.[index]?.currency && (
-                    <p className="text-red-500 text-sm mt-1">{errors.sponsorshipTypes[index].currency?.message}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.sponsorshipTypes[index].currency?.message}
+                    </p>
                   )}
                 </div>
               </div>
-              <Button
-                type="button"
-                onClick={() => removeSponsor(index)}
-                variant="destructive"
-                size="sm"
-              >
+              <Button type="button" onClick={() => removeSponsor(index)} variant="destructive" size="sm">
                 Remove Sponsorship
               </Button>
             </div>
           ))}
           <Button
             type="button"
-            onClick={() => appendSponsor({ name: "", benefits: "", price: 0, currency: "INR" })}
+            onClick={() =>
+              appendSponsor({ name: "", benefits: "", price: 0, currency: "INR" })
+            }
             variant="outline"
           >
             Add Sponsorship Type
@@ -331,11 +293,7 @@ export default function CreateEventPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button
-          type="submit"
-          className="w-full md:w-auto"
-          disabled={isSubmitting}
-        >
+        <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
           {isSubmitting ? "Creating..." : "Create Event"}
         </Button>
       </div>

@@ -7,12 +7,11 @@ interface Props {
   locationURL: string;
 }
 
-export default function LocationView({ location, locationURL }: Props) {
-  // Extract coordinates from Google Maps URL
+export default function LocationView({ locationURL }: Props) {
   const coordsMatch = locationURL.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
   const coords = coordsMatch 
     ? [parseFloat(coordsMatch[1]), parseFloat(coordsMatch[2])]
-    : [28.6139, 77.2090]; // Default coordinates if parsing fails
+    : [28.6139, 77.2090];
 
   return (
     <div className="space-y-2">

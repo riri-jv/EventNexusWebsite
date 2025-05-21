@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { checkRole } from '@/utils/roles';
 import { SearchUsers } from './SearchUsers';
 import { clerkClient } from '@clerk/nextjs/server';
-import { removeRole, setRole } from './_actions';
+import { setRole } from './_actions';
 import Image from 'next/image';
 import { format } from 'date-fns';
 
