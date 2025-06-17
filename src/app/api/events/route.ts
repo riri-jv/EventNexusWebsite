@@ -7,7 +7,7 @@ import {
   handleApiError,
   requireAuthRole,
 } from "@/lib/error";
-import { publicEventFields } from "@/lib/events";
+import { publicEventFields } from "@/types/types";
 
 
 

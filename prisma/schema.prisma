@@ -32,6 +32,7 @@ model User {
     lastName  String
     email     String   @unique
     role      UserRole @default(ATTENDEE)
+    imageUrl  String
     createdAt DateTime @default(now())
 
     uploads         Upload[]

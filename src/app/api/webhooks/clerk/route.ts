@@ -41,6 +41,7 @@ export async function POST(req: Request) {
         firstName: first_name ?? "",
         lastName: last_name ?? "",
         role,
+        imageUrl: event.data.image_url ?? "",
       },
     });
     const client = await clerkClient();
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
     });
   } else {
     console.warn("unexpected hook:", event.type);
-    console.warn(event);
+    // console.warn(event);
   }
   return new Response("ok", { status: 200 });
 }
