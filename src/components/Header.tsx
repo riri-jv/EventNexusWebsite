@@ -36,19 +36,21 @@ export default function Header() {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Left: Logo */}
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Link
+            href="/"
+            className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+          >
             EventNexus
           </Link>
         </div>
-
-        {/* Center: Search Bar */}
+        {/* 
         <div className="flex-1 max-w-md mx-4">
           <input
             type="text"
             placeholder="Search events..."
             className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-        </div>
+        </div> */}
 
         {/* Right: Theme Toggle + Auth */}
         <div className="flex items-center gap-4">
@@ -61,14 +63,18 @@ export default function Header() {
           </button>
 
           <SignedOut>
-            <Select onValueChange={(value) => setRole(value as PublicUserRole)} defaultValue="ATTENDEE">
+            <Select
+              onValueChange={(value) => setRole(value as PublicUserRole)}
+              defaultValue="ATTENDEE"
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="ATTENDEE" />
               </SelectTrigger>
               <SelectContent>
                 {roles.map((rl) => (
                   <SelectItem key={rl} value={rl}>
-                    {rl[0]}{rl.substring(1).toLowerCase()}
+                    {rl[0]}
+                    {rl.substring(1).toLowerCase()}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -80,10 +86,7 @@ export default function Header() {
               </button>
             </SignInButton>
 
-            <SignUpButton
-              mode="modal"
-              unsafeMetadata={{ role }}
-            >
+            <SignUpButton mode="modal" unsafeMetadata={{ role }}>
               <button className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                 Sign Up
               </button>

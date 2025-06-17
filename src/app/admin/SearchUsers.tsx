@@ -7,7 +7,7 @@ export const SearchUsers = () => {
   const pathname = usePathname();
 
   return (
-    <div>
+    <div className="text-black">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -17,9 +17,8 @@ export const SearchUsers = () => {
           router.push(pathname + "?search=" + queryTerm);
         }}
       >
-        <label htmlFor="search">Search for users</label>
-        <input id="search" name="search" type="text" />
-        <button type="submit">Submit</button>
+        <input id="search" name="search" type="text" className="mx-2 py-1 px-4 border-black outline rounded-md outline-1 dark:bg-white" placeholder="search for users" />
+        <button type="submit">Search</button>
       </form>
     </div>
   );

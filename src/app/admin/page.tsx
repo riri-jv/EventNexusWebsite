@@ -17,7 +17,7 @@ export default async function AdminDashboard(params: {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           User Management
         </h1>
         {/* <p className="text-gray-600">Manage user roles and permissions</p> */}
@@ -74,14 +74,11 @@ export default async function AdminDashboard(params: {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
                         <Image
-                          src={user.imageUrl}
+                          src={user.imageUrl || "/generic-profile.svg"}
                           alt={`${user.firstName}'s profile`}
                           width={40}
                           height={40}
                           className="h-full w-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = "/generic-profile.svg";
-                          }}
                         />
                       </div>
                       <div className="ml-4">

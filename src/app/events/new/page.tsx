@@ -13,7 +13,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/ImageUpload";
-import { Loading } from "@/components/ui/loading";
 
 // Dynamically import the map to avoid SSR issues
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
@@ -424,7 +423,7 @@ export default function CreateEventPage() {
           className="w-full md:w-auto"
           disabled={isSubmitting}
         >
-          {isSubmitting ? <Loading /> : "Create Event"}
+          {isSubmitting ? "Creating..." : "Create Event"}
         </Button>
       </div>
     </form>

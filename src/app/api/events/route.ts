@@ -127,13 +127,13 @@ export async function POST(req: NextRequest) {
         endTime: new Date(data.endTime),
         location: data.location,
         locationURL: data.locationURL,
-        // image: data.image
-        //   ? {
-        //     connect: {
-        //       id: data.image,
-        //     },
-        //   }
-        //   : undefined,
+        image: data.image
+          ? {
+            connect: {
+              id: data.image,
+            },
+          }
+          : undefined,
         organizer: {
           connect: { id: user.id },
         },

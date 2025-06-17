@@ -116,7 +116,11 @@ export default function EventDetailsPage() {
       {/* Event Image */}
       <div className="relative w-full h-[400px] mb-8 rounded-lg overflow-hidden">
         <Image
-          src={event.imageId ? `/api/uploads/${event.imageId}` : "/generic-event.svg"}
+          src={
+            event.imageId
+              ? `/api/uploads/${event.imageId}`
+              : "/generic-event.svg"
+          }
           alt={event.summary}
           fill
           className="object-cover"
@@ -237,45 +241,49 @@ export default function EventDetailsPage() {
           )}
 
           {/* Organizer Dashboard */}
-          {isOrganizer && (
+          {isOrganizer &&
+            event.packages.length > 0 &&
+            event.tickets.length > 0 && (
             <Card className="p-6 mb-8">
               <h2 className="text-2xl font-semibold mb-4">
-                Organizer Dashboard
+                  Organizer Dashboard
               </h2>
 
-              {/* Ticket Sales Summary */}
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-3">Ticket Sales</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {event.tickets.map((ticket) => {
-                    return (
-                      <Card key={ticket.id} className="p-4">
-                        <h4 className="font-medium">{ticket.title}</h4>
-                        <p className="text-sm text-gray-600">
-                          Sold: {ticket.sold} / {ticket.quantity}
-                        </p>
-                      </Card>
-                    );
-                  })}
+              {event.tickets.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-3">Ticket Sales</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {event.tickets.map((ticket) => {
+                      return (
+                        <Card key={ticket.id} className="p-4">
+                          <h4 className="font-medium">{ticket.title}</h4>
+                          <p className="text-sm text-gray-600">
+                              Sold: {ticket.sold} / {ticket.quantity}
+                          </p>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Sponsorship Summary */}
-              <div>
-                <h3 className="text-lg font-medium mb-3">Sponsorships</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {event.packages.map((type) => {
-                    return (
-                      <Card key={type.id} className="p-4">
-                        <h4 className="font-medium">{type.title}</h4>
-                        <p className="text-sm text-gray-600">
-                          Sponsors: {event.sponsors.length}
-                        </p>
-                      </Card>
-                    );
-                  })}
+              {event.packages.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Sponsorships</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {event.packages.map((type) => {
+                      return (
+                        <Card key={type.id} className="p-4">
+                          <h4 className="font-medium">{type.title}</h4>
+                          <p className="text-sm text-gray-600">
+                              Sponsors: {event.sponsors.length}
+                          </p>
+                        </Card>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </Card>
           )}
         </div>
@@ -350,27 +358,32 @@ export default function EventDetailsPage() {
             </Card>
           )}
 
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Available Tickets</h2>
-            <div className="space-y-4">
-              {event.tickets.map((ticket) => (
-                <div key={ticket.id} className="p-4 bg-secondary/50 rounded-lg">
-                  <h3 className="font-medium">{ticket.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {ticket.price} INR
-                  </p>
-                  {ticket.quantity - ticket.sold - ticket.reserved > 0 ? (
-                    <Badge variant="outline">
-                      {ticket.quantity - ticket.sold - ticket.reserved}{" "}
-                      available
-                    </Badge>
-                  ) : (
-                    <Badge variant="destructive">Sold out</Badge>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
+          {event.tickets.length > 0 && (
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Available Tickets</h2>
+              <div className="space-y-4">
+                {event.tickets.map((ticket) => (
+                  <div
+                    key={ticket.id}
+                    className="p-4 bg-secondary/50 rounded-lg"
+                  >
+                    <h3 className="font-medium">{ticket.title}</h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {ticket.price} INR
+                    </p>
+                    {ticket.quantity - ticket.sold - ticket.reserved > 0 ? (
+                      <Badge variant="outline">
+                        {ticket.quantity - ticket.sold - ticket.reserved}{" "}
+                        available
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive">Sold out</Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {/* Available Sponsorship Packages */}
           {(isSponsor || isOrganizer) && event.packages.length > 0 && (
