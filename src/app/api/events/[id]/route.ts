@@ -1,53 +1,42 @@
-import { prisma } from '@/lib/prisma';
-import { auth } from '@clerk/nextjs/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { EventNexusError, getRole, handleApiError } from "@/lib/error";
+import { publicEventFields } from "@/lib/events";
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-
-    const { userId } = await auth();
-
+    const { clerkUser } = await getRole();
     const { id: eventId } = await params;
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      include: {
-        ticketTypes: true,
-        sponsorshipTypes: true,
-        organizer: true,
-        sponsorships: userId
-          ? {
-            where: {
-              userId: userId,
+      select: {
+        ...publicEventFields,
+        orders: {
+          where: {
+            userId: clerkUser?.id,
+          },
+          include: {
+            orderItems: {
+              include: {
+                ticket: true,
+                package: true,
+              },
             },
-            include: {
-              sponsorshipType: true,
-            }
-          }
-          : false,
-        transactions: userId
-          ? {
-            where: {
-              userId: userId,
-            },
-            include: {
-              ticketType: true,
-            }
-          }
-          : false,
+          },
+        },
       },
     });
 
-  if (!event) {
-    return NextResponse.json({ message: 'Event not found' }, { status: 404 });
-  }
+    if (!event) {
+      throw EventNexusError.notFound("Event", eventId);
+    }
 
-  return NextResponse.json(event, { status: 200 });
-} catch (error) {
-  console.error('[GET /api/events/[id]]', error);
-  return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
-}
+    return NextResponse.json({ data: event }, { status: 200 });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

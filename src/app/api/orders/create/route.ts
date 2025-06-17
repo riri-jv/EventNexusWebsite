@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
-import Razorpay from 'razorpay';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import Razorpay from "razorpay";
+import { OrderType } from "@prisma/client";
+import { EventNexusError, handleApiError, requireAuth } from "@/lib/error";
 
-if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_SECRET_ID) {
-  throw new Error('Missing Razorpay credentials');
+if (
+  !process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+  !process.env.RAZORPAY_SECRET_ID
+) {
+  throw new Error("Missing Razorpay credentials");
 }
 
 const razorpay = new Razorpay({
@@ -14,114 +18,267 @@ const razorpay = new Razorpay({
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const { clerkUser, role } = await requireAuth();
+
+    const {
+      eventId,
+      items: checkoutItems,
+      orderType,
+    } = (await req.json()) as {
+      eventId: string;
+      items: {
+        id: string;
+        quantity: number;
+      }[];
+      orderType: OrderType;
+    };
+
+    if (typeof eventId !== "string")
+      throw EventNexusError.validation("Invalid event ID", "id");
+
+    if (
+      typeof orderType !== "string" ||
+      !["PACKAGE", "TICKET"].includes(orderType)
+    ) {
+      throw EventNexusError.validation("Invalid order type", "orderType");
     }
 
-    const body = await req.json();
-    const { eventId, items, type } = body;
+    const isTicket = orderType === "TICKET";
+
+    if (!isTicket && role !== "SPONSOR")
+      throw new EventNexusError(
+        "FORBIDDEN_ROLE",
+        "You need to be registered as a sponsor to purchase packages."
+      );
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: clerkUser.id },
     });
 
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
-    }
+    if (!user) throw new EventNexusError("USER_SYNC_ERROR", null, clerkUser.id);
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       include: {
-        ticketTypes: true,
-        sponsorshipTypes: true,
+        tickets: true,
+        packages: true,
+        organizer: true,
       },
     });
 
-    if (!event) {
-      return NextResponse.json({ message: 'Event not found' }, { status: 404 });
-    }
+    if (!event) throw EventNexusError.notFound("Event", eventId);
 
-    let totalAmount = 0;
-    const tickets: { ticketTypeId: string; quantity: number; status: string }[] = [];
-    const sponsorships: { sponsorshipTypeId: string; status: string }[] = [];
+    if (event.organizerId === clerkUser.id)
+      throw new EventNexusError(
+        "FORBIDDEN",
+        "Organizer cannot buy tickets to or sponsor their own event"
+      );
 
-    if (type === 'ticket') {
-      for (const item of items) {
-        const ticketType = event.ticketTypes.find(t => t.id === item.id);
-        if (!ticketType) {
-          return NextResponse.json({ message: 'Invalid ticket type' }, { status: 400 });
-        }
-        if (ticketType.quantity < item.quantity) {
-          return NextResponse.json({ message: 'Not enough tickets available' }, { status: 400 });
-        }
-        totalAmount += ticketType.price * item.quantity;
-        tickets.push({
-          ticketTypeId: item.id,
-          quantity: item.quantity,
-          status: 'pending',
-        });
-      }
-    } else {
-      for (const item of items) {
-        const sponsorshipType = event.sponsorshipTypes.find(s => s.id === item.id);
-        if (!sponsorshipType) {
-          return NextResponse.json({ message: 'Invalid sponsorship type' }, { status: 400 });
-        }
-        totalAmount += sponsorshipType.price;
-        sponsorships.push({
-          sponsorshipTypeId: item.id,
-          status: 'pending',
-        });
-      }
-    }
-
-    const order = await razorpay.orders.create({
-      amount: Math.round(totalAmount * 100),
-      currency: 'INR',
-      notes: {
-        eventId,
-        userId: user.id,
-      },
-    });
-
+    /* delete expired orders to free reserved tickets */
     await prisma.$transaction(async (tx) => {
-      for (const ticket of tickets) {
-        await tx.transaction.create({
-          data: {
-            ...ticket,
-            eventId,
-            userId: user.id,
-            razorpayId: order.id,
-            fees: 0,
-            currency: 'INR',
-          },
-        });
-      }
+      const currentTime = new Date();
 
-      for (const sponsorship of sponsorships) {
-        await tx.sponsorship.create({
-          data: {
-            sponsorshipTypeId: sponsorship.sponsorshipTypeId,
-            status: sponsorship.status,
-            eventId,
-            userId: user.id,
-            razorpayId: order.id,
-          },
-        });
+      const expiredOrders = await tx.order.findMany({
+        where: {
+          eventId: event.id,
+          type: orderType,
+          status: "RESERVED",
+          expiresAt: { lt: currentTime },
+        },
+        include: { orderItems: true },
+      });
+
+      const ordersToDelete: Promise<any>[] = [];
+      for (const { orderItems } of expiredOrders) {
+        for (const { ticketId, packageId, quantity } of orderItems) {
+          if (ticketId) {
+            ordersToDelete.push(
+              tx.ticket.update({
+                where: { id: ticketId },
+                data: { reserved: { decrement: quantity } },
+              })
+            );
+          } else if (packageId) {
+            ordersToDelete.push(
+              tx.package.update({
+                where: { id: packageId },
+                data: { reserved: { decrement: quantity } },
+              })
+            );
+          }
+        }
       }
+      await Promise.all(ordersToDelete);
+      await tx.order.updateMany({
+        where: {
+          eventId: event.id,
+          type: orderType,
+          status: "RESERVED",
+          expiresAt: { lt: currentTime },
+        },
+        data: { status: "EXPIRED" },
+      });
     });
 
+    let totalAmountCents = 0;
+    const orderItemsData: {
+      ticketId?: string;
+      packageId?: string;
+      quantity: number;
+    }[] = [];
+
+    const { razorpayOrder, order } = await prisma.$transaction(async (tx) => {
+      for (const checkoutItem of checkoutItems) {
+        if (orderType === "TICKET") {
+          const ticket = await tx.ticket.findUnique({
+            where: {
+              id: checkoutItem.id,
+              eventId: event.id,
+            },
+          });
+          if (!ticket)
+            throw EventNexusError.notFound("Ticket", checkoutItem.id);
+          const available = ticket.quantity - ticket.sold - ticket.reserved;
+          if (available < checkoutItem.quantity) {
+            throw new EventNexusError("INSUFFICIENT_STOCK", {
+              requested: checkoutItem.quantity,
+              available: available,
+              id: ticket.id,
+              title: ticket.title,
+              type: "TICKET",
+            });
+          }
+
+          totalAmountCents += Math.round(
+            ticket.price * checkoutItem.quantity * 100
+          );
+          orderItemsData.push({
+            ticketId: checkoutItem.id,
+            quantity: checkoutItem.quantity,
+          });
+        } else {
+          const pkg = await tx.package.findUnique({
+            where: {
+              id: checkoutItem.id,
+              eventId: event.id,
+            },
+          });
+
+          if (!pkg) throw EventNexusError.notFound("Package", checkoutItem.id);
+
+          const available = pkg.quantity - pkg.sold - pkg.reserved;
+          if (available < checkoutItem.quantity)
+            throw new EventNexusError("INSUFFICIENT_STOCK", {
+              requested: checkoutItem.quantity,
+              available,
+              id: pkg.id,
+              title: pkg.title,
+              type: "PACKAGE",
+            });
+
+          totalAmountCents += Math.round(
+            pkg.price * checkoutItem.quantity * 100
+          );
+          orderItemsData.push({
+            packageId: checkoutItem.id,
+            quantity: checkoutItem.quantity,
+          });
+        }
+      }
+
+      const razorpayOrder = await razorpay.orders.create({
+        amount: totalAmountCents,
+        currency: "INR",
+        notes: {
+          eventId: event.id,
+          userId: user.id,
+          type: orderType,
+          itemCount: checkoutItems.length.toString(),
+        },
+      });
+
+      const orderItemsToReserve = [];
+      for (const orderItem of orderItemsData) {
+        if (orderType === "TICKET") {
+          orderItemsToReserve.push(
+            tx.ticket.update({
+              where: {
+                id: orderItem.ticketId,
+              },
+              data: {
+                reserved: {
+                  increment: orderItem.quantity,
+                },
+              },
+            })
+          );
+        } else {
+          orderItemsToReserve.push(
+            tx.package.update({
+              where: {
+                id: orderItem.packageId,
+              },
+              data: {
+                reserved: {
+                  increment: orderItem.quantity,
+                },
+              },
+            })
+          );
+        }
+      }
+
+      await Promise.all(orderItemsToReserve);
+
+      const order = await tx.order.create({
+        data: {
+          razorpayOrderId: razorpayOrder.id,
+          status: "RESERVED",
+          totalAmountCents,
+          type: orderType,
+          userId: user.id,
+          eventId: event.id,
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000), // two times the razorpay expiration duration
+          orderItems: {
+            create: orderItemsData,
+          },
+        },
+        include: {
+          orderItems: {
+            include: {
+              ticket: {
+                select: {
+                  title: true,
+                  price: true,
+                  id: true,
+                },
+              },
+              package: {
+                select: {
+                  title: true,
+                  price: true,
+                  id: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      return { razorpayOrder, order };
+    });
     return NextResponse.json({
-      id: order.id,
-      amount: order.amount,
-      currency: order.currency,
+      data: {
+        id: razorpayOrder.id,
+        amountCents: razorpayOrder.amount,
+        expiresAt: order.expiresAt,
+        items: order.orderItems.map((orderItem) => ({
+          title: orderItem.ticket?.title || orderItem.package?.title,
+          quantity: orderItem.quantity,
+          price: orderItem.ticket?.price || orderItem.package?.price,
+        })),
+      },
     });
   } catch (error) {
-    console.error('[POST /api/orders/create]', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    return handleApiError(error);
   }
 }

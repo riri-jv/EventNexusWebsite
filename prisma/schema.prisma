@@ -1,117 +1,167 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mongodb"
-  url      = env("DATABASE_URL")
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+    ATTENDEE
+    SPONSOR
+    ORGANIZER
+    ADMIN
+}
+
+enum OrderType {
+    TICKET
+    PACKAGE
+}
+
+enum OrderStatus {
+    RESERVED
+    COMPLETED
+    FAILED
+    EXPIRED
 }
 
 model User {
-  id                String           @id @map("_id")
-  firstName         String
-  lastName          String
-  email             String           @unique
-  role              String
-  createdAt         DateTime         @default(now())
-  eventsAttended    Transaction[]
-  eventsSponsored   Sponsorship[]
-  eventsOrganized   Event[]          @relation("OrganizedEvents")
-  uploads           Upload[]
+    id        String   @id @map("_id")
+    firstName String
+    lastName  String
+    email     String   @unique
+    role      UserRole @default(ATTENDEE)
+    createdAt DateTime @default(now())
+
+    uploads         Upload[]
+    eventsOrganized Event[]   @relation("OrganizedEvents")
+    sponsoredEvents Sponsor[]
+    orders          Order[]
 }
 
 model Upload {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  filename    String
-  contentType String
-  data        Bytes
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
+    createdAt DateTime @default(now())
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
+    contentType String
+    filename    String
+    data        Bytes
+
+    userId String
+
+    user  User   @relation(fields: [userId], references: [id])
+    event Event?
 }
 
 model Event {
-  // auto-generated
-  id                String             @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  organizerId       String
-  organizer         User               @relation("OrganizedEvents", fields: [organizerId], references: [id])
-  transactions      Transaction[]
-  sponsorships      Sponsorship[]
-  eventrev          EventRevenue[]
-  // event overview
-  summary           String
-  description       String
+    createdAt DateTime @default(now())
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    updatedAt DateTime @updatedAt
 
-  // event logistics
-  startTime         DateTime
-  endTime           DateTime
-  locationURL       String
-  location          String
+    description String
+    endTime     DateTime
+    locationURL String
+    location    String
+    startTime   DateTime
+    summary     String
 
-  images            String[]
+    organizerId    String
+    eventRevenueId String? @unique @db.ObjectId
+    imageId        String? @unique @db.ObjectId
 
-  ticketTypes       TicketType[]
-  sponsorshipTypes  SponsorshipType[]
+    organizer    User          @relation("OrganizedEvents", fields: [organizerId], references: [id])
+    eventRevenue EventRevenue? @relation("EventToRevenue", fields: [eventRevenueId], references: [id])
+    image        Upload?       @relation(fields: [imageId], references: [id])
+
+    packages Package[]
+    tickets  Ticket[]
+    sponsors Sponsor[]
+    orders   Order[]
 }
 
 model EventRevenue {
-  id                String        @id @default(auto()) @map("_id") @db.ObjectId
-  ticketRevenue     Int           @default(0)
-  sponsorRevenue    Int           @default(0)
-  paid              Int           @default(0)
-  event             Event         @relation(fields: [eventId], references: [id])
-  eventId           String        @db.ObjectId
+    id String @id @default(auto()) @map("_id") @db.ObjectId
+
+    paidCents           Int @default(0)
+    packageRevenueCents Int @default(0)
+    ticketRevenueCents  Int @default(0)
+
+    event Event? @relation("EventToRevenue")
 }
 
-model TicketType {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  name          String
-  price         Float
-  currency      String
-  quantity      Int
-  event         Event         @relation(fields: [eventId], references: [id])
-  eventId       String        @db.ObjectId
-  transactions  Transaction[]
+model Ticket {
+    id String @id @default(auto()) @map("_id") @db.ObjectId
+
+    title       String
+    description String
+    price       Float
+    quantity    Int
+    sold        Int    @default(0)
+    reserved    Int    @default(0)
+
+    event   Event  @relation(fields: [eventId], references: [id])
+    eventId String @db.ObjectId
+
+    orderItems OrderItem[]
 }
 
-model SponsorshipType {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  name          String
-  benefits      String[]
-  price         Float
-  currency      String
-  event         Event          @relation(fields: [eventId], references: [id])
-  eventId       String         @db.ObjectId
-  sponsorships  Sponsorship[]
+model Package {
+    id String @id @default(auto()) @map("_id") @db.ObjectId
+
+    title       String
+    description String
+    price       Float
+    quantity    Int
+    sold        Int    @default(0)
+    reserved    Int    @default(0)
+
+    event   Event  @relation(fields: [eventId], references: [id])
+    eventId String @db.ObjectId
+
+    orderItems OrderItem[]
 }
 
-model Sponsorship {
-  id                 String           @id @default(auto()) @map("_id") @db.ObjectId
-  user               User             @relation(fields: [userId], references: [id])
-  userId             String
-  event              Event            @relation(fields: [eventId], references: [id])
-  eventId            String           @db.ObjectId
-  sponsorshipType    SponsorshipType  @relation(fields: [sponsorshipTypeId], references: [id])
-  sponsorshipTypeId  String           @db.ObjectId
-  status             String
-  razorpayId         String?
-  createdAt          DateTime         @default(now())
+model Order {
+    id               String      @id @default(auto()) @map("_id") @db.ObjectId
+    createdAt        DateTime    @default(now())
+    razorpayOrderId  String      @unique
+    status           OrderStatus @default(RESERVED)
+    totalAmountCents Int
+    expiresAt        DateTime
+    type             OrderType
+
+    userId  String
+    eventId String @db.ObjectId
+
+    user  User  @relation(fields: [userId], references: [id])
+    event Event @relation(fields: [eventId], references: [id])
+
+    orderItems OrderItem[]
 }
 
-model Transaction {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
-  event         Event        @relation(fields: [eventId], references: [id])
-  eventId       String       @db.ObjectId
-  user          User         @relation(fields: [userId], references: [id])
-  userId        String
-  ticketType    TicketType   @relation(fields: [ticketTypeId], references: [id])
-  ticketTypeId  String       @db.ObjectId
-  quantity      Int
-  fees          Float
-  currency      String
-  status        String
-  razorpayId    String
-  createdAt     DateTime     @default(now())
+model OrderItem {
+    id       String @id @default(auto()) @map("_id") @db.ObjectId
+    quantity Int
+
+    orderId   String  @db.ObjectId
+    ticketId  String? @db.ObjectId
+    packageId String? @db.ObjectId
+
+    order   Order    @relation(fields: [orderId], references: [id])
+    ticket  Ticket?  @relation(fields: [ticketId], references: [id])
+    package Package? @relation(fields: [packageId], references: [id])
+}
+
+model Sponsor {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    createdAt DateTime @default(now())
+
+    sponsorId String
+    eventId   String @db.ObjectId
+
+    sponsor User  @relation(fields: [sponsorId], references: [id])
+    event   Event @relation(fields: [eventId], references: [id])
+
+    @@unique([sponsorId, eventId])
 }

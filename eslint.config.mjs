@@ -25,7 +25,9 @@ const eslintConfig = [
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
-      semi: ["error", "always"],
+      indent: ["warn", 2],
+      semi: ["warn", "always"],
+      quotes: ["warn", "double"],
     },
   },
 ];

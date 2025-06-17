@@ -1,12 +1,9 @@
-export {};
-
-export type PublicRoles = 'attendee' | 'organizer' | 'sponsor';
-export type Roles = 'admin' | PublicRoles;
+import { UserRole } from "@prisma/client";
 
 declare global {
   interface CustomJwtSessionClaims {
     metadata: {
-      role?: Roles
+      role?: UserRole
     }
   }
 }

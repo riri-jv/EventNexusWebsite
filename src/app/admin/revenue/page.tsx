@@ -1,48 +1,55 @@
-'use client';
+"use client";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Event, EventRevenue, User } from "@prisma/client";
 
-interface EventRevenue {
-  id: string;
-  ticketRevenue: number;
-  sponsorRevenue: number;
-  paid: number;
-  event: {
-    id: string;
-    summary: string;
-    organizer: {
-      firstName: string;
-      lastName: string;
-    }
-  }
-}
+type EventRevenueWithEvent = EventRevenue & {
+  event: Event & {
+    organizer: User
+  };
+};
+
+// interface EventRevenue {
+//   id: string;
+//   ticketRevenueCents: number;
+//   sponsorRevenue: number;
+//   paid: number;
+//   event: {
+//     id: string;
+//     summary: string;
+//     organizer: {
+//       firstName: string;
+//       lastName: string;
+//     }
+//   }
+// }
 
 export default function RevenuePage() {
-  const [revenues, setRevenues] = useState<EventRevenue[]>([]);
+  const [revenues, setRevenues] = useState<EventRevenueWithEvent[]>([]);
   const [paidAmounts, setPaidAmounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const initialPaidAmounts = revenues.reduce((acc, revenue) => {
-      acc[revenue.event.id] = revenue.paid;
+      acc[revenue.event.id] = revenue.paidCents;
       return acc;
     }, {} as Record<string, number>);
     setPaidAmounts(initialPaidAmounts);
   }, [revenues]);
 
-  const updatePaidAmount = async (eventId: string, paid: number) => {
+  const updatePaidAmount = async (eventId: string, paidCents: number) => {
     try {
-      const res = await fetch('/api/admin/revenue', {
-        method: 'POST',
+      const res = await fetch("/api/admin/revenue", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ eventId, paid }),
+        body: JSON.stringify({ eventId, paidCents }),
       });
 
       if (!res.ok) {
@@ -50,31 +57,31 @@ export default function RevenuePage() {
         throw new Error(error.message);
       }
 
-      toast.success('Payment amount updated successfully');
+      toast.success("Payment amount updated successfully");
       fetchData();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update paid amount');
+      toast.error(error instanceof Error ? error.message : "Failed to update paid amount");
     }
   };
 
   const handlePaidChange = (eventId: string, value: number) => {
     setPaidAmounts(prev => ({
       ...prev,
-      [eventId]: value
+      [eventId]: value * 100
     }));
   };
 
   const fetchData = async () => {
     try {
-      const res = await fetch('/api/admin/revenue');
+      const res = await fetch("/api/admin/revenue");
       if (!res.ok) {
-        throw new Error('Failed to fetch revenue data');
+        throw new Error("Failed to fetch revenue data");
       }
-      const data = await res.json();
-      setRevenues(data.data);
+      const { data } = await res.json();
+      setRevenues(data);
       setError(null);
     } catch {
-      setError('Failed to load revenue data');
+      setError("Failed to load revenue data");
     } finally {
       setLoading(false);
     }
@@ -105,7 +112,7 @@ export default function RevenuePage() {
         </TableHeader>
         <TableBody>
           {revenues.map((revenue) => {
-            const totalRevenue = revenue.sponsorRevenue + revenue.ticketRevenue;
+            const totalRevenue = (revenue.packageRevenueCents + revenue.ticketRevenueCents) / 100;
             const eventId = revenue.event.id;
 
             return (
@@ -115,20 +122,21 @@ export default function RevenuePage() {
                   {revenue.event.organizer.firstName} {revenue.event.organizer.lastName}
                 </TableCell>
                 <TableCell className="font-mono">{eventId}</TableCell>
-                <TableCell>₹{revenue.sponsorRevenue}</TableCell>
-                <TableCell>₹{revenue.ticketRevenue}</TableCell>
+                <TableCell>₹{(revenue.packageRevenueCents) / 100}</TableCell>
+                <TableCell>₹{(revenue.ticketRevenueCents) / 100}</TableCell>
                 <TableCell>₹{totalRevenue}</TableCell>
                 <TableCell>
                   <Input 
                     type="number"
-                    value={paidAmounts[eventId] ?? revenue.paid}
+                    value={(paidAmounts[eventId] ?? revenue.paidCents)/ 100}
                     onChange={(e) => handlePaidChange(eventId, Number(e.target.value))}
                     className="w-24"
+                    step={0.01}
                   />
                 </TableCell>
                 <TableCell>
                   <Button 
-                    onClick={() => updatePaidAmount(eventId, paidAmounts[eventId] ?? revenue.paid)}
+                    onClick={() => updatePaidAmount(eventId, paidAmounts[eventId] ?? revenue.paidCents)}
                     variant="outline"
                     size="sm"
                   >

@@ -1,84 +1,125 @@
-import { prisma } from '@/lib/prisma';
-import { NextRequest, NextResponse } from 'next/server'; 
-import { auth, clerkClient } from '@clerk/nextjs/server';
-import { z } from 'zod';
+import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { eventSchema } from "@/lib/schemas/events";
 import {
-  eventOverviewSchema,
-  eventLogisticsSchema,
-  ticketTypeSchema,
-  sponsorshipTypeSchema,
-} from '@/lib/schemas/events';
+  EventNexusError,
+  getRole,
+  handleApiError,
+  requireAuthRole,
+} from "@/lib/error";
+import { publicEventFields } from "@/lib/events";
 
-export async function GET() {
+
+
+export async function GET(req: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const { role } = await getRole();
+    const isAdmin = role === "ADMIN";
+
+    const url = new URL(req.url);
+    let page = parseInt(url.searchParams.get("page") || "1", 10);
+    let limit = parseInt(url.searchParams.get("limit") || "20", 10);
+    if (isNaN(page) || page < 1) page = 1;
+    if (isNaN(limit) || limit > 100 || limit < 1) limit = 100;
+    const sinceParam = url.searchParams.get("since");
+    const untilParam = url.searchParams.get("until");
+
+    const skip = (page - 1) * limit;
+    const where: any = {};
+
+    if (sinceParam) {
+      const since = new Date(sinceParam);
+      if (!isNaN(since.getTime())) {
+        where.startTime = { ...(where.startTime || {}), gte: since };
+      }
     }
 
-    const events = await prisma.event.findMany({
-      include: {
-        ticketTypes: true,
-        sponsorshipTypes: true,
-        organizer: true,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
-    });
+    if (untilParam) {
+      const until = new Date(untilParam);
+      if (!isNaN(until.getTime())) {
+        where.startTime = { ...(where.startTime || {}), lte: until };
+      }
+    }
 
-    return NextResponse.json(events, { status: 200 });
+    const adminFields = isAdmin
+      ? {
+        eventRevenue: true,
+        eventRevenueId: true,
+        orders: true,
+      }
+      : {};
+
+    const [events, totalCount] = await Promise.all([
+      prisma.event.findMany({
+        where,
+        select: {
+          ...publicEventFields,
+          ...adminFields,
+        },
+        orderBy: { startTime: "asc" },
+        skip,
+        take: limit,
+      }),
+      prisma.event.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return NextResponse.json(
+      {
+        data: events,
+        meta: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+        },
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('[GET /api/events]', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
-const formSchema = eventOverviewSchema
-  .merge(eventLogisticsSchema)
-  .extend({
-    ticketTypes: z.array(ticketTypeSchema),
-    sponsorshipTypes: z.array(sponsorshipTypeSchema),
-    image: z.string().optional(),
-  });
-
-
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
-    }
-
-    const role = user.publicMetadata.role as string;
-    if (role !== 'organizer' && role !== 'admin') {
-      return NextResponse.json({ message: 'Only organizers can create events' }, { status: 403 });
-    }
+    const { clerkUser } = await requireAuthRole(["ADMIN", "ORGANIZER"]);
 
     const body = await req.json();
-    const parsed = formSchema.safeParse(body);
+    const parsed = eventSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ message: 'Validation failed', errors: parsed.error.flatten() }, { status: 400 });
+      const fieldErrors = parsed.error.flatten();
+      const firstError = Object.entries(fieldErrors.fieldErrors)[0];
+
+      if (firstError) {
+        const [field, messages] = firstError;
+        throw EventNexusError.validation(
+          messages[0] || "Validation failed",
+          field,
+          fieldErrors
+        );
+      }
+
+      throw EventNexusError.validation(
+        fieldErrors.formErrors[0] || "Validation failed",
+        undefined,
+        fieldErrors
+      );
     }
 
     const data = parsed.data;
 
-    const dbUser = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findUnique({
+      where: { id: clerkUser.id },
     });
 
-    if (!dbUser) {
-      return NextResponse.json({ message: 'User not found in database' }, { status: 404 });
+    if (!user) {
+      throw new EventNexusError("USER_SYNC_ERROR", null, clerkUser.id);
     }
 
-    const newEvent = await prisma.event.create({
+    const event = await prisma.event.create({
       data: {
         summary: data.summary,
         description: data.description,
@@ -86,37 +127,43 @@ export async function POST(req: NextRequest) {
         endTime: new Date(data.endTime),
         location: data.location,
         locationURL: data.locationURL,
-        images: data.image ? [data.image] : [],
+        image: {
+          connect: {
+            id: data.image,
+          },
+        },
         organizer: {
-          connect: { id: dbUser.id },
+          connect: { id: user.id },
         },
-        ticketTypes: {
-          create: data.ticketTypes.map((t) => ({
-            name: t.name,
-            price: t.price,
-            currency: t.currency,
-            quantity: t.quantity,
-          })),
+        tickets: {
+          create: data.tickets.map(
+            ({ description, price, quantity, title }) => ({
+              description,
+              price,
+              quantity,
+              title,
+            })
+          ),
         },
-        sponsorshipTypes: {
-          create: data.sponsorshipTypes.map((s) => ({
-            name: s.name,
-            benefits: s.benefits.split(',').map(b => b.trim()),
-            price: s.price,
-            currency: s.currency,
-          })),
+        packages: {
+          create: data.packages.map(
+            ({ description, price, quantity, title }) => ({
+              description,
+              price,
+              quantity,
+              title,
+            })
+          ),
         },
-        eventrev: {
-          create: {}
-        }
+        eventRevenue: {
+          create: {},
+        },
       },
+      select: publicEventFields,
     });
 
-    return NextResponse.json({ eventId: newEvent.id }, { status: 201 });
+    return NextResponse.json({ data: event }, { status: 201 });
   } catch (error) {
-    console.error('[POST /api/events]', error);
-    return NextResponse.json({ 
-      message: error instanceof Error ? error.message : 'Internal server error'
-    }, { status: 500 });
+    return handleApiError(error);
   }
 }

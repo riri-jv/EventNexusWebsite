@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useTheme } from 'next-themes';
+import Link from "next/link";
+import { useTheme } from "next-themes";
 import {
   SignInButton,
   SignUpButton,
   SignedIn,
   SignedOut,
   UserButton,
-} from '@clerk/nextjs';
-import { SunIcon, MoonIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+} from "@clerk/nextjs";
+import { SunIcon, MoonIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -18,14 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PublicRoles } from '@/types/globals';
+import { PublicUserRole } from "@/types/types";
 
-const roles = ["attendee", "organizer", "sponsor"];
+const roles: PublicUserRole[] = ["ATTENDEE", "ORGANIZER", "SPONSOR"];
 
 export default function Header() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [role, setRole] = useState<PublicRoles>('attendee');
+  const [role, setRole] = useState<PublicUserRole>("ATTENDEE");
 
   useEffect(() => setMounted(true), []);
 
@@ -53,22 +53,22 @@ export default function Header() {
         {/* Right: Theme Toggle + Auth */}
         <div className="flex items-center gap-4">
           <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Toggle Theme"
           >
-            {theme === 'dark' ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+            {theme === "dark" ? <SunIcon size={18} /> : <MoonIcon size={18} />}
           </button>
 
           <SignedOut>
-            <Select onValueChange={(value) => setRole(value as PublicRoles)} defaultValue="attendee">
+            <Select onValueChange={(value) => setRole(value as PublicUserRole)} defaultValue="ATTENDEE">
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="attendee" />
+                <SelectValue placeholder="ATTENDEE" />
               </SelectTrigger>
               <SelectContent>
                 {roles.map((rl) => (
                   <SelectItem key={rl} value={rl}>
-                    {rl}
+                    {rl[0]}{rl.substring(1).toLowerCase()}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import Head from "next/head";
 
 export default function Contact() {
   return (
@@ -91,7 +91,7 @@ export default function Contact() {
               </p>
               <ul className="space-y-3">
                 <li>
-                  <span className="font-medium text-gray-800 dark:text-gray-200">General Inquiries:</span>{' '}
+                  <span className="font-medium text-gray-800 dark:text-gray-200">General Inquiries:</span>{" "}
                   <a href="mailto:contact@eventnexu.in" className="text-blue-600 dark:text-blue-400 hover:underline">
                     contact@eventnexu.in
                   </a>

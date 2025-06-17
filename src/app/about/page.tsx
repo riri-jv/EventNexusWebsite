@@ -1,4 +1,4 @@
-import Head from 'next/head';
+import Head from "next/head";
 
 export default function About() {
   return (
@@ -62,8 +62,8 @@ export default function About() {
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">Meet The Team</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { name: 'Rashmi J V', role: 'Developer', funFact: 'Cloud 9 lunatic' },
-              { name: 'Laxmi S Tangadi', role: 'Developer', funFact: 'Realist' },
+              { name: "Rashmi J V", role: "Developer", funFact: "Cloud 9 lunatic" },
+              { name: "Laxmi S Tangadi", role: "Developer", funFact: "Realist" },
             ].map((person, index) => (
               <div key={index} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
                 <div className="w-20 h-20 mx-auto bg-gray-200 dark:bg-gray-700 rounded-full mb-4"></div>

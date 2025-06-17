@@ -1,4 +1,4 @@
-import { Variants } from 'framer-motion';
+import { Variants } from "framer-motion";
 
 export const staggerContainer = (staggerChildren?: number, delayChildren?: number): Variants => {
   return {
@@ -13,7 +13,7 @@ export const staggerContainer = (staggerChildren?: number, delayChildren?: numbe
 };
 
 export const fadeIn = (
-  direction: 'up' | 'down' | 'left' | 'right',
+  direction: "up" | "down" | "left" | "right",
   type: string,
   delay: number,
   duration: number
@@ -21,8 +21,8 @@ export const fadeIn = (
   return {
     hidden: {
       opacity: 0,
-      y: direction === 'up' ? 40 : direction === 'down' ? -40 : 0,
-      x: direction === 'left' ? 40 : direction === 'right' ? -40 : 0,
+      y: direction === "up" ? 40 : direction === "down" ? -40 : 0,
+      x: direction === "left" ? 40 : direction === "right" ? -40 : 0,
     },
     show: {
       opacity: 1,
@@ -32,14 +32,14 @@ export const fadeIn = (
         type: type,
         delay: delay,
         duration: duration,
-        ease: 'easeOut',
+        ease: "easeOut",
       },
     },
   };
 };
 
 export const slideIn = (
-  direction: 'up' | 'down' | 'left' | 'right',
+  direction: "up" | "down" | "left" | "right",
   type: string,
   delay: number,
   duration: number
@@ -47,8 +47,8 @@ export const slideIn = (
   return {
     hidden: {
       opacity: 0,
-      y: direction === 'up' ? '100%' : direction === 'down' ? '-100%' : 0,
-      x: direction === 'left' ? '100%' : direction === 'right' ? '-100%' : 0,
+      y: direction === "up" ? "100%" : direction === "down" ? "-100%" : 0,
+      x: direction === "left" ? "100%" : direction === "right" ? "-100%" : 0,
     },
     show: {
       opacity: 1,
@@ -58,7 +58,7 @@ export const slideIn = (
         type: type,
         delay: delay,
         duration: duration,
-        ease: 'easeOut',
+        ease: "easeOut",
       },
     },
   };

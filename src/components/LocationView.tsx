@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
 
 interface Props {
   location: string;

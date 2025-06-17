@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -20,25 +20,23 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       if (!file) return;
 
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
+      const res = await fetch("/api/uploads", {
+        method: "POST",
         body: formData,
       });
 
+      const { data, error } = await res.json();
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Upload failed');
+        throw new Error(error.message || "Upload failed");
       }
 
-      const data = await res.json();
-      const absoluteUrl = new URL(data.url, window.location.origin).toString();
-      onChange(absoluteUrl);
-      toast.success('Image uploaded successfully');
+      onChange(data.id);
+      toast.success("Image uploaded successfully");
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to upload image');
+      console.error("Error uploading image:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to upload image");
     } finally {
       setIsUploading(false);
     }
@@ -68,7 +66,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
   const renderImage = () => (
     <div className="relative w-full h-64 group">
       <Image
-        src={value!}
+        src={`/api/uploads/${value}`!}
         alt="Event image"
         fill
         className="rounded-lg object-cover"
@@ -79,7 +77,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
           type="button"
           variant="destructive"
           size="sm"
-          onClick={() => onChange('')}
+          onClick={() => onChange("")}
           className="z-10"
         >
           Remove Image

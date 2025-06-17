@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   req: NextRequest,
@@ -14,18 +14,18 @@ export async function GET(
     });
 
     if (!upload) {
-      return NextResponse.json({ message: 'Image not found' }, { status: 404 });
+      return NextResponse.json({ message: "Image not found" }, { status: 404 });
     }
 
     const response = new NextResponse(upload.data);
-    response.headers.set('Content-Type', upload.contentType);
-    response.headers.set('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    response.headers.set("Content-Type", upload.contentType);
+    response.headers.set("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
     return response;
 
   } catch (error) {
-    console.error('[GET /api/uploads/[id]]', error);
+    console.error("[GET /api/uploads/[id]]", error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }

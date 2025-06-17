@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useTheme } from 'next-themes';
-import { useCallback } from 'react';
-import Particles from 'react-tsparticles';
-import { loadSlim } from 'tsparticles-slim';
-import type { Engine } from 'tsparticles-engine';
+import { useTheme } from "next-themes";
+import { useCallback } from "react";
+import Particles from "react-tsparticles";
+import { loadSlim } from "tsparticles-slim";
+import type { Engine } from "tsparticles-engine";
 
 export default function StarryBackground() {
   const { theme } = useTheme();
@@ -20,10 +20,10 @@ export default function StarryBackground() {
       options={{
         fullScreen: { enable: true, zIndex: -1 },
         background: {
-          color: { value: theme === 'dark' ? '#121212' : '#ffffff' },
+          color: { value: theme === "dark" ? "#121212" : "#ffffff" },
         },
         particles: {
-          color: { value: theme === 'dark' ? '#ffffff' : '#673AB7' },
+          color: { value: theme === "dark" ? "#ffffff" : "#673AB7" },
           number: {
             value: 100,
             density: {
@@ -36,11 +36,11 @@ export default function StarryBackground() {
             random: true,
           },
           move: {
-            enable: theme === 'dark' ? false : true,  // In light mode, particles move; in dark mode, they don't
+            enable: theme === "dark" ? false : true,  // In light mode, particles move; in dark mode, they don't
             speed: 0.2,
-            direction: 'none',
+            direction: "none",
             outModes: {
-              default: 'bounce',
+              default: "bounce",
             },
           },
           opacity: {
@@ -57,8 +57,8 @@ export default function StarryBackground() {
         interactivity: {
           events: {
             onHover: {
-              enable: theme === 'dark' ? false : true,  // In dark mode, no interaction; in light mode, attraction
-              mode: 'attract',  // Particles will be attracted to the mouse pointer in light mode
+              enable: theme === "dark" ? false : true,  // In dark mode, no interaction; in light mode, attraction
+              mode: "attract",  // Particles will be attracted to the mouse pointer in light mode
             },
             onClick: { enable: false },
             resize: true,
@@ -72,10 +72,10 @@ export default function StarryBackground() {
           },
         },
         detectRetina: true,
-        lineLinked: theme === 'light' ? {
+        lineLinked: theme === "light" ? {
           enable: true,
           distance: 150,
-          color: '#D1C4E9',  // Soft lavender/purple color
+          color: "#D1C4E9",  // Soft lavender/purple color
           opacity: 0.5,
           width: 0.5,
           move: {

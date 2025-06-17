@@ -1,35 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import Script from 'next/script';
+import { useEffect, useState } from "react";
+import { redirect, useParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import Script from "next/script";
+import { EventWithOrders } from "@/types/types";
+import { Ticket, Package, UserRole, OrderType, OrderStatus } from "@prisma/client";
 
-type Event = {
-  id: string;
-  summary: string;
-  ticketTypes: {
-    id: string;
-    name: string;
-    price: number;
-    currency: string;
-    quantity: number;
-  }[];
-  sponsorshipTypes: {
-    id: string;
-    name: string;
-    benefits: string[];
-    price: number;
-    currency: string;
-  }[];
-};
-
-type PurchaseItem = {
+type OrderItemInput = {
   id: string;
   quantity: number;
 };
@@ -42,17 +25,17 @@ declare global {
 
 export default function PurchasePage() {
   const { id } = useParams();
-  const router = useRouter();
   const { user, isSignedIn } = useUser();
-  const [event, setEvent] = useState<Event | null>(null);
+  const [event, setEvent] = useState<EventWithOrders | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedItems, setSelectedItems] = useState<PurchaseItem[]>([]);
-  const [userRole, setUserRole] = useState<string>('');
+  const [selectedItems, setSelectedItems] = useState<OrderItemInput[]>([]);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [orderType, setPurchaseType] = useState<OrderType>("TICKET");
 
   useEffect(() => {
     if (user) {
-      setUserRole(user.publicMetadata.role as string);
+      setUserRole(user.publicMetadata.role as UserRole);
     }
   }, [user]);
 
@@ -60,18 +43,28 @@ export default function PurchasePage() {
     const fetchEvent = async () => {
       try {
         const res = await fetch(`/api/events/${id}`);
-        if (!res.ok) throw new Error('Failed to fetch event');
-        const data = await res.json();
-        setEvent(data);
+        if (!res.ok) throw new Error("Failed to fetch event");
+        const { data } = await res.json();
 
-        if (user?.publicMetadata.role === 'sponsor') {
-          setSelectedItems(data.sponsorshipTypes.map((type: any) => ({ id: type.id, quantity: 0 })));
+        if (data.organizer.id === user?.id) {
+          toast.error("Event organizers cannot purchase tickets or packages");
+          redirect(`/events/${id}`);
+          return;
+        }
+
+        setEvent(data);
+        if (userRole === "SPONSOR" && orderType === "PACKAGE") {
+          setSelectedItems(
+            data.packages.map(({ id }: Package) => ({ id, quantity: 0 }))
+          );
         } else {
-          setSelectedItems(data.ticketTypes.map((type: any) => ({ id: type.id, quantity: 0 })));
+          setSelectedItems(
+            data.tickets.map(({ id }: Ticket) => ({ id, quantity: 0 }))
+          );
         }
       } catch (error) {
-        console.error('Error fetching event:', error);
-        toast.error('Failed to load event details');
+        console.error("Error fetching event:", error);
+        toast.error("Failed to load event details");
       } finally {
         setLoading(false);
       }
@@ -80,95 +73,118 @@ export default function PurchasePage() {
     if (isSignedIn) {
       fetchEvent();
     }
-  }, [id, isSignedIn, user?.publicMetadata.role]);
+  }, [id, isSignedIn, user?.id, userRole, orderType]);
 
   const handleQuantityChange = (itemId: string, value: string) => {
     const quantity = parseInt(value) || 0;
-    setSelectedItems(prev =>
-      prev.map(item =>
+    setSelectedItems((prev) =>
+      prev.map((item) =>
         item.id === itemId ? { ...item, quantity: Math.max(0, quantity) } : item
       )
     );
   };
 
   const calculateTotal = () => {
-    if (!event) return { total: 0, currency: '' };
+    if (!event) return { total: 0, currency: "INR" };
 
-    const items = userRole === 'sponsor' ? event.sponsorshipTypes : event.ticketTypes;
-    const selected = selectedItems.filter(item => item.quantity > 0);
-    
-    if (selected.length === 0) return { total: 0, currency: '' };
+    const items = orderType === "TICKET" ? event.tickets : event.packages;
+    const selected = selectedItems.filter((item) => item.quantity > 0);
 
-    const first = items.find(item => item.id === selected[0].id);
-    const currency = first?.currency || '';
-    
+    if (selected.length === 0) return { total: 0, currency: "INR" };
+
     const total = selected.reduce((sum, item) => {
-      const itemType = items.find(t => t.id === item.id);
+      const itemType = items.find((t) => t.id === item.id);
       return sum + (itemType?.price || 0) * item.quantity;
     }, 0);
 
-    return { total, currency };
+    return { total, currency: "INR" };
   };
 
   const handlePurchase = async () => {
     if (!event || processingPayment) return;
 
-    const selectedWithQuantity = selectedItems.filter(item => item.quantity > 0);
+    const selectedWithQuantity = selectedItems.filter(
+      (item) => item.quantity > 0
+    );
     if (selectedWithQuantity.length === 0) {
-      toast.error('Please select at least one item to purchase');
+      toast.error("Please select at least one item to purchase");
       return;
     }
 
     try {
       setProcessingPayment(true);
-      const response = await fetch('/api/orders/create', {
-        method: 'POST',
+      const response = await fetch("/api/orders/create", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           eventId: event.id,
           items: selectedWithQuantity,
-          type: userRole === 'sponsor' ? 'sponsorship' : 'ticket',
+          orderType: orderType,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create order');
+        const { error } = await response.json();
+        throw new Error(error);
       }
 
-      const { id: orderId, amount, currency } = await response.json();
+      const {
+        data: { id: razorpayOrderId, amountCents },
+      } = await response.json();
 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: amount,
-        currency: currency,
-        name: 'EventNexus',
-        description: `Purchase for ${event.summary}`,
-        order_id: orderId,
-        handler: async function (response: any) {
+        amount: amountCents,
+        currency: "INR",
+        name: "EventNexus",
+        description: `${orderType[0]}${orderType.slice(1).toLowerCase()} purchase for ${event.summary}`,
+        order_id: razorpayOrderId,
+        handler: async function () {
           try {
-            const verifyResponse = await fetch('/api/orders/verify', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                orderId,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
+            const pollLimit = 10;
+            const pollDelay = 5 * 1000;
+            let pollCount = 0;
 
-            if (!verifyResponse.ok) {
-              throw new Error('Payment verification failed');
-            }
+            const pollOrderStatus = async () => {
+              const response = await fetch("/api/orders/status", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  razorpayOrderId,
+                  orderType,
+                }),
+              });
 
-            router.push(`/events/${id}?payment=success`);
+              const { data, error } = await response.json();
+              if (!response.ok)
+                throw new Error(error);
+
+              const status = data.status as OrderStatus;
+
+              if (status === "FAILED")
+                throw new Error("Payment verification failed");
+
+              if (status === "COMPLETED") {
+                redirect(`/events/${id}?payment=success`);
+                return;
+              }
+
+              if (pollCount < pollLimit) {
+                pollCount++;
+                setTimeout(pollOrderStatus, pollDelay);
+              } else {
+                throw new Error("Payment verification timed out");
+              }
+            };
+
+            pollOrderStatus();
           } catch (error) {
-            console.error('Payment verification error:', error);
-            toast.error('Payment verification failed');
+            console.error("Payment verification error:", error);
+            toast.error("Payment verification failed");
             setProcessingPayment(false);
           }
         },
@@ -177,7 +193,7 @@ export default function PurchasePage() {
           email: user?.primaryEmailAddress?.emailAddress || undefined,
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             setProcessingPayment(false);
           },
         },
@@ -186,11 +202,16 @@ export default function PurchasePage() {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error) {
-      console.error('Error creating order:', error);
-      toast.error('Failed to process your purchase');
+      console.error("Error creating order:", error);
+      toast.error("Failed to process your purchase");
       setProcessingPayment(false);
     }
   };
+
+  if (!isSignedIn) {
+    redirect(`/events/${id}`);
+    return null;
+  }
 
   if (loading) {
     return <div className="container mx-auto py-8 px-4">Loading...</div>;
@@ -200,15 +221,23 @@ export default function PurchasePage() {
     return (
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-2xl font-bold mb-4">Event Not Found</h1>
-        <p>The event you&apos;re looking for doesn&apos;t exist or you don&apos;t have permission to view it.</p>
-        <Button className="mt-4" onClick={() => router.push('/events')}>
+        <p>
+          The event you&aposre looking for doesn&apost exist or you don&apost have
+          permission to view it.
+        </p>
+        <Button className="mt-4" onClick={() => redirect("/events")}>
           Back to Events
         </Button>
       </div>
     );
   }
 
-  const items = userRole === 'sponsor' ? event.sponsorshipTypes : event.ticketTypes;
+  const items =
+    orderType === "TICKET"
+      ? event.tickets
+      : userRole === "SPONSOR"
+        ? event.packages
+        : [];
   const { total, currency } = calculateTotal();
 
   return (
@@ -221,15 +250,43 @@ export default function PurchasePage() {
         <Button
           variant="outline"
           className="mb-6"
-          onClick={() => router.push(`/events/${id}`)}
+          onClick={() => redirect(`/events/${id}`)}
         >
           ← Back to Event
         </Button>
 
-        <h1 className="text-3xl font-bold mb-6">
-          {userRole === 'sponsor' ? 'Sponsor Event' : 'Purchase Tickets'}
-        </h1>
-        <h2 className="text-xl mb-8">{event.summary}</h2>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">
+            {orderType === "TICKET" ? "Purchase Tickets" : "Sponsor Event"}
+          </h1>
+
+          {userRole === "SPONSOR" && (
+            <div className="flex gap-4">
+              <Button
+                variant={orderType === "TICKET" ? "default" : "outline"}
+                onClick={() => {
+                  setPurchaseType("TICKET");
+                  setSelectedItems(
+                    event.tickets.map(({ id }) => ({ id, quantity: 0 }))
+                  );
+                }}
+              >
+                Buy Tickets
+              </Button>
+              <Button
+                variant={orderType === "PACKAGE" ? "default" : "outline"}
+                onClick={() => {
+                  setPurchaseType("PACKAGE");
+                  setSelectedItems(
+                    event.packages.map(({ id }) => ({ id, quantity: 0 }))
+                  );
+                }}
+              >
+                Purchase Packages
+              </Button>
+            </div>
+          )}
+        </div>
 
         <div className="grid md:grid-cols-2 gap-8">
           <div className="space-y-6">
@@ -237,39 +294,41 @@ export default function PurchasePage() {
               <Card key={item.id} className="p-6">
                 <div className="flex flex-col space-y-4">
                   <div>
-                    <h3 className="text-lg font-semibold">{item.name}</h3>
+                    <h3 className="text-lg font-semibold">{item.title}</h3>
                     <p className="text-gray-600">
-                      {item.price} {item.currency}
+                      {item.price} {currency}
                     </p>
-                    {userRole === 'sponsor' && 'benefits' in item && (
+                    {orderType === "PACKAGE" && (
                       <div className="mt-2">
                         <strong className="text-sm">Benefits:</strong>
-                        <ul className="list-disc list-inside text-sm text-gray-600">
-                          {item.benefits.map((benefit, idx) => (
-                            <li key={idx}>{benefit}</li>
-                          ))}
-                        </ul>
+                        <p className="text-gray-600">{item.description}</p>
                       </div>
                     )}
                   </div>
 
-                  {'quantity' in item && (
-                    <p className="text-sm text-gray-600">
-                      {item.quantity} available
-                    </p>
-                  )}
+                  <p className="text-sm text-gray-600">
+                    {item.quantity - item.sold - item.reserved} available
+                  </p>
 
                   <div className="flex items-center gap-4">
-                    <Label htmlFor={`quantity-${item.id}`} className="flex-none">
+                    <Label
+                      htmlFor={`quantity-${item.id}`}
+                      className="flex-none"
+                    >
                       Quantity:
                     </Label>
                     <Input
                       id={`quantity-${item.id}`}
                       type="number"
                       min={0}
-                      max={'quantity' in item ? item.quantity : 1}
-                      value={selectedItems.find(si => si.id === item.id)?.quantity || 0}
-                      onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                      max={item.quantity - item.sold - item.reserved}
+                      value={
+                        selectedItems.find((si) => si.id === item.id)
+                          ?.quantity || 0
+                      }
+                      onChange={(e) =>
+                        handleQuantityChange(item.id, e.target.value)
+                      }
                       className="w-24"
                     />
                   </div>
@@ -283,16 +342,16 @@ export default function PurchasePage() {
               <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
               <div className="space-y-4">
                 {selectedItems
-                  .filter(item => item.quantity > 0)
-                  .map(item => {
-                    const itemDetails = items.find(i => i.id === item.id);
+                  .filter((item) => item.quantity > 0)
+                  .map((item) => {
+                    const itemDetails = items.find((i) => i.id === item.id);
                     return (
                       <div key={item.id} className="flex justify-between">
                         <span>
-                          {itemDetails?.name} × {item.quantity}
+                          {itemDetails?.title} × {item.quantity}
                         </span>
                         <span>
-                          {(itemDetails?.price || 0) * item.quantity} {itemDetails?.currency}
+                          {(itemDetails?.price || 0) * item.quantity} {currency}
                         </span>
                       </div>
                     );
@@ -313,7 +372,9 @@ export default function PurchasePage() {
                   disabled={total === 0 || processingPayment}
                   onClick={handlePurchase}
                 >
-                  {processingPayment ? 'Processing...' : `Pay ${total} ${currency}`}
+                  {processingPayment
+                    ? "Processing..."
+                    : `Pay ${total} ${currency}`}
                 </Button>
               </div>
             </Card>

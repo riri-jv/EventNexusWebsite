@@ -1,8 +1,9 @@
-import { currentUser } from '@clerk/nextjs/server';
-import Link from 'next/link';
-import { Button } from '../components/ui/button';
-import { SignInButton } from '@clerk/nextjs';
-import { SignUpButton } from '@clerk/nextjs';
+import { currentUser } from "@clerk/nextjs/server";
+import Link from "next/link";
+import { Button } from "../components/ui/button";
+import { SignInButton } from "@clerk/nextjs";
+import { SignUpButton } from "@clerk/nextjs";
+import Image from "next/image";
 
 export default async function Page() {
   const user = await currentUser();
@@ -17,9 +18,10 @@ export default async function Page() {
           </h1>
 
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8">
-            From concerts and conferences to workshops and meetups, find your next unforgettable experience with EventNexus.
+            From concerts and conferences to workshops and meetups, find your
+            next unforgettable experience with EventNexus.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {user ? (
               <Link href="/events">
@@ -63,7 +65,8 @@ export default async function Page() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Easy Booking</h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Secure your spot in just a few clicks with our simple booking system.
+              Secure your spot in just a few clicks with our simple booking
+              system.
             </p>
           </div>
           <div className="text-center p-6">
@@ -78,20 +81,15 @@ export default async function Page() {
         </div>
       </section>
 
-      {/* Popular Events Section */}
+      {/* Recent Events Section */}
       <section className="max-w-7xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold mb-8 text-center">Popular Events</h2>
+        <h2 className="text-3xl font-bold mb-8 text-center">Recent Events</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Event cards would go here */}
-          <EventCard />
-          <EventCard />
-          <EventCard />
+          <RecentEvents />
         </div>
         <div className="text-center mt-8">
           <Link href="/events">
-            <Button variant="outline">
-              View All Events
-            </Button>
+            <Button variant="outline">View All Events</Button>
           </Link>
         </div>
       </section>
@@ -99,19 +97,50 @@ export default async function Page() {
   );
 }
 
-function EventCard() {
-  return (
-    <div className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="h-48 bg-gray-200 dark:bg-gray-800"></div>
+async function RecentEvents() {
+  const url = `${(process.env.NODE_ENV !== "development" && process.env.NEXT_PUBLIC_APP_URL) || "http://localhost:3000"}/api/events?limit=3&page=1`;
+  const res = await fetch(url, {
+    next: { revalidate: 60 },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    console.log(error);
+    return;
+  }
+  const { data: events } = await res.json();
+
+  if (!events.length) return null;
+
+  return events.map((event: any) => (
+    <div
+      key={event.id}
+      className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      {event.imageId ? (
+        <div className="relative h-48 bg-gray-200 dark:bg-gray-800">
+          <Image
+            src={`/api/uploads/${event.imageId}`}
+            alt={event.summary}
+            fill
+            className="object-cover"
+          />
+        </div>
+      ) : (
+        <div className="h-48 bg-gray-200 dark:bg-gray-800" />
+      )}
       <div className="p-4">
-        <h3 className="font-semibold text-lg mb-1">Event Name</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Location • Date</p>
-        <Button size="sm" className="w-full">
-          Book Now
-        </Button>
+        <h3 className="font-semibold text-lg mb-1">{event.summary}</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          {event.location} • {new Date(event.startTime).toLocaleDateString()}
+        </p>
+        <Link href={`/events/${event.id}`}>
+          <Button size="sm" className="w-full">
+            View Event
+          </Button>
+        </Link>
       </div>
     </div>
-  );
+  ));
 }
 
 function CalendarIcon(props: any) {
@@ -136,7 +165,6 @@ function CalendarIcon(props: any) {
   );
 }
 
- 
 function TicketIcon(props: any) {
   return (
     <svg
@@ -159,7 +187,6 @@ function TicketIcon(props: any) {
   );
 }
 
- 
 function UsersIcon(props: any) {
   return (
     <svg
