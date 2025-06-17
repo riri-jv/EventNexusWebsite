@@ -12,6 +12,7 @@ import { Loading } from "@/components/ui/loading";
 import { readableDate } from "@/lib/utils";
 import { EventWithOrders } from "@/types/types";
 import { UserRole } from "@prisma/client";
+import Link from "next/link";
 
 const LocationView = dynamic(() => import("@/components/LocationView"), {
   ssr: false,
@@ -134,9 +135,29 @@ export default function EventDetailsPage() {
               {event.description}
             </p>
             <div className="mt-4 space-y-2">
-              <p>
-                <strong>Organized by {event.organizer.firstName}</strong>
-              </p>
+              <div className="flex items-center gap-4">
+                <Link
+                  href={`/profile/${event.organizer.id}`}
+                  className="flex items-center gap-2 hover:opacity-80"
+                >
+                  {event.organizer.imageUrl ? (
+                    <Image
+                      src={event.organizer.imageUrl}
+                      alt={event.organizer.firstName}
+                      width={40}
+                      height={40}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
+                      <span className="text-lg font-semibold">
+                        {event.organizer.firstName[0]}
+                      </span>
+                    </div>
+                  )}
+                  <strong>Organized by {event.organizer.firstName}</strong>
+                </Link>
+              </div>
               <p className="font-semibold text-sm">
                 {readableDate(event.startTime)} to {readableDate(event.endTime)}
               </p>
@@ -160,17 +181,35 @@ export default function EventDetailsPage() {
               <h2 className="text-xl font-semibold mb-4">Event Sponsors</h2>
               <div className="space-y-4">
                 {event.sponsors.map((sponsor) => (
-                  <div
+                  <Link
                     key={sponsor.id}
-                    className="p-4 bg-secondary/50 rounded-lg"
+                    href={`/profile/${sponsor.sponsor.id}`}
+                    className="block p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors"
                   >
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">
-                        {sponsor.sponsor.firstName} {sponsor.sponsor.lastName}
-                      </h3>
-                      <Badge variant="secondary">Sponsor</Badge>
+                    <div className="flex items-center gap-3">
+                      {sponsor.sponsor.imageUrl ? (
+                        <Image
+                          src={sponsor.sponsor.imageUrl}
+                          alt={sponsor.sponsor.firstName}
+                          width={40}
+                          height={40}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
+                          <span className="text-lg font-semibold">
+                            {sponsor.sponsor.firstName[0]}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <h3 className="font-medium">
+                          {sponsor.sponsor.firstName} {sponsor.sponsor.lastName}
+                        </h3>
+                        <Badge variant="secondary">Sponsor</Badge>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </Card>
