@@ -55,5 +55,5 @@ export const eventSchema = eventOverviewSchema
   .extend({
     tickets: z.array(ticketSchema),
     packages: z.array(packageSchema),
-    image: z.string(),
+    image: z.string().optional(),
   });

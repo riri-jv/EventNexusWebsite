@@ -73,8 +73,19 @@ export default function CreateEventPage() {
   }
 
   const onSubmit = async (formData: FormValues) => {
+    // Check if start time is after end time
+    if (new Date(formData.startTime) > new Date(formData.endTime)) {
+      toast.error("Start time cannot be after end time");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
+      // If no image is provided, remove it from the form data
+      if (!formData.image) {
+        delete formData.image;
+      }
+
       const res = await fetch("/api/events", {
         method: "POST",
         body: JSON.stringify(formData),

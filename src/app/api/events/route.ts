@@ -9,8 +9,6 @@ import {
 } from "@/lib/error";
 import { publicEventFields } from "@/types/types";
 
-
-
 export async function GET(req: Request) {
   try {
     const { role } = await getRole();
@@ -43,10 +41,10 @@ export async function GET(req: Request) {
 
     const adminFields = isAdmin
       ? {
-        eventRevenue: true,
-        eventRevenueId: true,
-        orders: true,
-      }
+          eventRevenue: true,
+          eventRevenueId: true,
+          orders: true,
+        }
       : {};
 
     const [events, totalCount] = await Promise.all([
@@ -127,11 +125,13 @@ export async function POST(req: NextRequest) {
         endTime: new Date(data.endTime),
         location: data.location,
         locationURL: data.locationURL,
-        image: {
-          connect: {
-            id: data.image,
-          },
-        },
+        image: data.image
+          ? {
+              connect: {
+                id: data.image,
+              },
+            }
+          : undefined,
         organizer: {
           connect: { id: user.id },
         },
