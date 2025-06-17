@@ -1,4 +1,4 @@
-import { EventNexusError, getRole, handleApiError } from "@/lib/error";
+import { EventNexusError, handleApiError } from "@/lib/error";
 import { prisma } from "@/lib/prisma";
 import { publicUserFields, publicEventFields } from "@/types/types";
 import { NextRequest, NextResponse } from "next/server";

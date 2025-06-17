@@ -94,7 +94,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
           <div className="flex justify-center">
             <Loading />
           </div>
-        ) : value ? (
+        ) : value?.trim() ? (
           renderImage()
         ) : (
           renderUploadArea()

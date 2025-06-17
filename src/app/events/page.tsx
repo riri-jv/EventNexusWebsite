@@ -90,16 +90,18 @@ export default function EventsPage() {
 
   const renderEventCard = (event: Event) => (
     <Card key={event.id} className="p-6 hover:shadow-lg transition-shadow">
-      {event.imageId && (
-        <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
-          <Image
-            src={`/api/uploads/${event.imageId}`}
-            alt={event.summary}
-            fill
-            className="object-cover"
-          />
-        </div>
-      )}
+      <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden">
+        <Image
+          src={
+            event.imageId
+              ? `/api/uploads/${event.imageId}`
+              : "/generic-event.svg"
+          }
+          alt={event.summary}
+          fill
+          className="object-cover"
+        />
+      </div>
 
       <h3 className="text-xl font-semibold mb-2">{event.summary}</h3>
 

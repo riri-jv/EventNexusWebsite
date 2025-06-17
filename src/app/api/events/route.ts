@@ -41,10 +41,10 @@ export async function GET(req: Request) {
 
     const adminFields = isAdmin
       ? {
-          eventRevenue: true,
-          eventRevenueId: true,
-          orders: true,
-        }
+        eventRevenue: true,
+        eventRevenueId: true,
+        orders: true,
+      }
       : {};
 
     const [events, totalCount] = await Promise.all([
@@ -117,6 +117,8 @@ export async function POST(req: NextRequest) {
       throw new EventNexusError("USER_SYNC_ERROR", null, clerkUser.id);
     }
 
+    console.log(data);
+
     const event = await prisma.event.create({
       data: {
         summary: data.summary,
@@ -125,13 +127,13 @@ export async function POST(req: NextRequest) {
         endTime: new Date(data.endTime),
         location: data.location,
         locationURL: data.locationURL,
-        image: data.image
-          ? {
-              connect: {
-                id: data.image,
-              },
-            }
-          : undefined,
+        // image: data.image
+        //   ? {
+        //     connect: {
+        //       id: data.image,
+        //     },
+        //   }
+        //   : undefined,
         organizer: {
           connect: { id: user.id },
         },

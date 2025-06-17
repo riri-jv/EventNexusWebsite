@@ -114,17 +114,18 @@ export default function EventDetailsPage() {
       )}
 
       {/* Event Image */}
-      {event.imageId && (
-        <div className="relative w-full h-[400px] mb-8 rounded-lg overflow-hidden">
-          <Image
-            src={`/api/uploads/${event.imageId}`}
-            alt={event.summary}
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
-      )}
+      <div className="relative w-full h-[400px] mb-8 rounded-lg overflow-hidden">
+        <Image
+          src={event.imageId ? `/api/uploads/${event.imageId}` : "/generic-event.svg"}
+          alt={event.summary}
+          fill
+          className="object-cover"
+          priority
+          onError={(e) => {
+            e.currentTarget.src = "/generic-event.svg";
+          }}
+        />
+      </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start gap-8">
         <div className="flex-1">
@@ -154,11 +155,14 @@ export default function EventDetailsPage() {
                 >
                   {event.organizer.imageUrl ? (
                     <Image
-                      src={event.organizer.imageUrl}
-                      alt={event.organizer.firstName}
+                      src={event.organizer.imageUrl || "/generic-profile.svg"}
+                      alt={`${event.organizer.firstName} ${event.organizer.lastName}`}
                       width={40}
                       height={40}
                       className="rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.src = "/generic-profile.svg";
+                      }}
                     />
                   ) : (
                     <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
@@ -201,11 +205,16 @@ export default function EventDetailsPage() {
                     <div className="flex items-center gap-3">
                       {sponsor.sponsor.imageUrl ? (
                         <Image
-                          src={sponsor.sponsor.imageUrl}
+                          src={
+                            sponsor.sponsor.imageUrl || "/generic-profile.svg"
+                          }
                           alt={sponsor.sponsor.firstName}
                           width={40}
                           height={40}
                           className="rounded-full"
+                          onError={(e) => {
+                            e.currentTarget.src = "/generic-profile.svg";
+                          }}
                         />
                       ) : (
                         <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">

@@ -79,6 +79,9 @@ export default async function AdminDashboard(params: {
                           width={40}
                           height={40}
                           className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/generic-profile.svg";
+                          }}
                         />
                       </div>
                       <div className="ml-4">

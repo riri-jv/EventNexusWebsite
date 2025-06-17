@@ -52,7 +52,7 @@ model Upload {
     userId String
 
     user  User   @relation(fields: [userId], references: [id])
-    event Event?
+    event Event[]
 }
 
 model Event {
@@ -69,7 +69,7 @@ model Event {
 
     organizerId    String
     eventRevenueId String? @unique @db.ObjectId
-    imageId        String? @unique @db.ObjectId
+    imageId        String?  @db.ObjectId
 
     organizer    User          @relation("OrganizedEvents", fields: [organizerId], references: [id])
     eventRevenue EventRevenue? @relation("EventToRevenue", fields: [eventRevenueId], references: [id])

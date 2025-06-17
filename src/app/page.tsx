@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { SignInButton } from "@clerk/nextjs";
 import { SignUpButton } from "@clerk/nextjs";
 import Image from "next/image";
+import { PublicEvent } from "@/types/types";
 
 export default async function Page() {
   const user = await currentUser();
@@ -99,19 +100,17 @@ export default async function Page() {
 
 async function RecentEvents() {
   const url = `${(process.env.NODE_ENV !== "development" && process.env.NEXT_PUBLIC_APP_URL) || "http://localhost:3000"}/api/events?limit=3&page=1`;
-  const res = await fetch(url, {
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(url);
   if (!res.ok) {
     const error = await res.json();
     console.log(error);
     return;
   }
-  const { data: events } = await res.json();
+  const { data: events } : { data: PublicEvent[] } = await res.json();
 
   if (!events.length) return null;
 
-  return events.map((event: any) => (
+  return events.map((event) => (
     <div
       key={event.id}
       className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
@@ -119,7 +118,7 @@ async function RecentEvents() {
       {event.imageId ? (
         <div className="relative h-48 bg-gray-200 dark:bg-gray-800">
           <Image
-            src={`/api/uploads/${event.imageId}`}
+            src={event.imageId ? `/api/uploads/${event.imageId}` : "/generic-event.svg"}
             alt={event.summary}
             fill
             className="object-cover"

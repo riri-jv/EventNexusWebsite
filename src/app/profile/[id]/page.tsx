@@ -30,11 +30,11 @@ export default async function ProfilePage({
       <div className="flex items-center gap-6">
         {data.imageUrl && (
           <Image
-            src={data.imageUrl}
+            src={data.imageUrl || "/generic-profile.svg"}
             alt={`${data.firstName} ${data.lastName}`}
-            width={128}
-            height={128}
-            className="rounded-full"
+            width={200}
+            height={200}
+            className="rounded-full object-cover"
           />
         )}
         <div>
@@ -57,15 +57,17 @@ export default async function ProfilePage({
                   key={event.id}
                   className="p-4 hover:shadow-lg transition-shadow"
                 >
-                  {event.imageId && (
-                    <Image
-                      src={`/api/uploads/${event.imageId}`}
-                      alt={event.summary}
-                      width={400}
-                      height={200}
-                      className="w-full rounded-lg mb-4 object-cover h-48"
-                    />
-                  )}
+                  <Image
+                    src={
+                      event.imageId
+                        ? `/api/uploads/${event.imageId}`
+                        : "/generic-event.svg"
+                    }
+                    alt={event.summary}
+                    width={400}
+                    height={200}
+                    className="w-full rounded-lg mb-4 object-cover h-48"
+                  />
                   <h3 className="font-semibold text-lg mb-2">
                     <Link
                       href={`/events/${event.id}`}
@@ -95,15 +97,17 @@ export default async function ProfilePage({
                   key={event.id}
                   className="p-4 hover:shadow-lg transition-shadow"
                 >
-                  {event.imageId && (
-                    <Image
-                      src={`/api/uploads/${event.imageId}`}
-                      alt={event.summary}
-                      width={400}
-                      height={200}
-                      className="w-full rounded-lg mb-4 object-cover h-48"
-                    />
-                  )}
+                  <Image
+                    src={
+                      event.imageId
+                        ? `/api/uploads/${event.imageId}`
+                        : "/generic-event.svg"
+                    }
+                    alt={event.summary}
+                    width={400}
+                    height={200}
+                    className="w-full rounded-lg mb-4 object-cover h-48"
+                  />
                   <h3 className="font-semibold text-lg mb-2">
                     <Link
                       href={`/events/${event.id}`}
@@ -115,7 +119,7 @@ export default async function ProfilePage({
                   <div className="flex items-center gap-3 mt-2">
                     <div className="flex items-center gap-2">
                       <Image
-                        src={event.organizer.imageUrl}
+                        src={event.organizer.imageUrl || "/generic-profile.svg"}
                         alt={`${event.organizer.firstName} ${event.organizer.lastName}`}
                         width={24}
                         height={24}
