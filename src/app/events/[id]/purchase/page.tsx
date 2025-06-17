@@ -378,7 +378,7 @@ export default function PurchasePage() {
                   onClick={handlePurchase}
                 >
                   {processingPayment 
-                    ? <Loading />
+                    ? "Loading..."
                     : `Pay ${total} ${currency}`}
                 </Button>
               </div>
