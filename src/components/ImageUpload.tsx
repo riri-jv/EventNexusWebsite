@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Loading } from "@/components/ui/loading";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -90,8 +91,8 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
     <div className="space-y-4 w-full">
       <div className="flex items-center justify-center w-full">
         {isUploading ? (
-          <div className="w-full h-64 border-2 border-gray-300 rounded-lg flex items-center justify-center">
-            <div className="text-sm text-gray-500">Uploading image...</div>
+          <div className="flex justify-center">
+            <Loading />
           </div>
         ) : value ? (
           renderImage()

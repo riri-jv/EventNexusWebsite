@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import Script from "next/script";
 import { EventWithOrders } from "@/types/types";
 import { Ticket, Package, UserRole, OrderType, OrderStatus } from "@prisma/client";
+import { Loading } from "@/components/ui/loading";
 
 type OrderItemInput = {
   id: string;
@@ -214,7 +215,11 @@ export default function PurchasePage() {
   }
 
   if (loading) {
-    return <div className="container mx-auto py-8 px-4">Loading...</div>;
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <Loading />
+      </div>
+    );
   }
 
   if (!event) {
@@ -372,8 +377,8 @@ export default function PurchasePage() {
                   disabled={total === 0 || processingPayment}
                   onClick={handlePurchase}
                 >
-                  {processingPayment
-                    ? "Processing..."
+                  {processingPayment 
+                    ? <Loading />
                     : `Pay ${total} ${currency}`}
                 </Button>
               </div>
