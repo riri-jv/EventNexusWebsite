@@ -131,6 +131,18 @@ export default function EventDetailsPage() {
           <h1 className="text-3xl font-bold mb-4">{event.summary}</h1>
 
           <div className="mb-8">
+            {/* Event Status */}
+            <div className="mb-4">
+              {new Date() > new Date(event.endTime) ? (
+                <Badge variant="secondary">Past Event</Badge>
+              ) : new Date() > new Date(event.startTime) ? (
+                <Badge variant="default" className="bg-green-500">
+                  Happening Now
+                </Badge>
+              ) : (
+                <Badge variant="outline">Upcoming</Badge>
+              )}
+            </div>
             <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
               {event.description}
             </p>
