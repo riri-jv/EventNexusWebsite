@@ -59,20 +59,23 @@ export async function POST(req: Request) {
 
     console.log(`Updating user profile for: ${id}`);
 
+    // Prepare update data
+    const updateData: any = {
+      firstName: first_name ?? "",
+      lastName: last_name ?? "",
+      imageUrl: event.data.image_url ?? "",
+      email: email_addresses[0]?.email_address ?? "",
+    };
+
+    // Only update role if it's provided and valid
+    if (unsafe_metadata?.role && roles.includes(unsafe_metadata.role as PublicUserRole)) {
+      updateData.role = unsafe_metadata.role as PublicUserRole;
+    }
+
     // Update the user in your database with fresh Clerk data
     await prisma.user.update({
       where: { id },
-      data: {
-        firstName: first_name ?? "",
-        lastName: last_name ?? "",
-        imageUrl: event.data.image_url ?? "",
-        email: email_addresses[0]?.email_address ?? "",
-        // Only update role if it's provided and valid
-        ...(unsafe_metadata?.role && 
-            roles.includes(unsafe_metadata.role as PublicUserRole) && {
-          role: unsafe_metadata.role as PublicUserRole,
-        }),
-      },
+      data: updateData,
     });
 
     console.log(`Successfully updated user: ${id}`);
