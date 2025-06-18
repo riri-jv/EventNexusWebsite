@@ -76,7 +76,7 @@ export default async function Page() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Connect</h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Meet like-minded people and grow your professional network.
+              Meet like-minded people and enhance your events.
             </p>
           </div>
         </div>
