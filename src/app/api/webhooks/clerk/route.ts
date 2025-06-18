@@ -19,11 +19,13 @@ export async function POST(req: Request) {
     "svix-timestamp": headerPayload.get("svix-timestamp")!,
     "svix-signature": headerPayload.get("svix-signature")!,
   }) as WebhookEvent;
+
   if (event.type === "user.created") {
     const { id, email_addresses, first_name, last_name, unsafe_metadata } =
       event.data;
     let role = unsafe_metadata.role as PublicUserRole;
     if (typeof role !== "string" || !roles.includes(role)) role = "ATTENDEE";
+
     const email = email_addresses[0]?.email_address;
     const user = await prisma.user.findUnique({ where: { email } });
     if (user) {
@@ -32,6 +34,7 @@ export async function POST(req: Request) {
       );
       return new Response();
     }
+
     await prisma.user.upsert({
       where: { id },
       update: {},
@@ -44,24 +47,46 @@ export async function POST(req: Request) {
         imageUrl: event.data.image_url ?? "",
       },
     });
+
     const client = await clerkClient();
     await client.users.updateUser(id, {
       publicMetadata: { role },
     });
+  } else if (event.type === "user.updated") {
+    // ADD THIS SECTION - Handle user profile updates
+    const { id, email_addresses, first_name, last_name, unsafe_metadata } =
+      event.data;
+
+    console.log(`Updating user profile for: ${id}`);
+
+    // Update the user in your database with fresh Clerk data
+    await prisma.user.update({
+      where: { id },
+      data: {
+        firstName: first_name ?? "",
+        lastName: last_name ?? "",
+        imageUrl: event.data.image_url ?? "",
+        email: email_addresses[0]?.email_address ?? "",
+        // Only update role if it's provided and valid
+        ...(unsafe_metadata?.role && 
+            roles.includes(unsafe_metadata.role as PublicUserRole) && {
+          role: unsafe_metadata.role as PublicUserRole,
+        }),
+      },
+    });
+
+    console.log(`Successfully updated user: ${id}`);
   } else if (
     event.type === "user.deleted" &&
     process.env.NODE_ENV === "development"
   ) {
     const { id } = event.data;
     console.log(`deleting everything related to user: ${id}`);
-
     const userOrders = await prisma.order.findMany({
       where: { userId: id },
       select: { id: true },
     });
-
     const orderIds = userOrders.map((o) => o.id);
-
     await prisma.$transaction(async (tx) => {
       await tx.sponsor.deleteMany({ where: { sponsorId: id } });
       if (orderIds.length > 0) {
@@ -77,5 +102,6 @@ export async function POST(req: Request) {
     console.warn("unexpected hook:", event.type);
     // console.warn(event);
   }
+
   return new Response("ok", { status: 200 });
 }
