@@ -7,7 +7,11 @@ import { PublicProfile } from "@/types/types";
 
 async function getProfile(id: string) {
   const res = await fetch(
-    `${(process.env.NODE_ENV !== "development" && process.env.NEXT_PUBLIC_APP_URL) || "http://localhost:3000"}/api/profile/${id}`
+    `${(process.env.NODE_ENV !== "development" && process.env.NEXT_PUBLIC_APP_URL) || "http://localhost:3000"}/api/profile/${id}`,
+    {
+      cache: 'no-store', // This ensures fresh data on every request
+      // Alternative: use next: { revalidate: 0 } for the same effect
+    }
   );
   if (!res.ok) return null;
   return res.json();
